@@ -505,9 +505,9 @@
                     lastResetTimestamp = data.resetEvent.time;
                     if (data.resetEvent.by !== myRole && myRole !== 'none') {
                         setTimeout(() => {
-                            const msg = data.resetEvent.type === 'all' 
-                                ? "⚠️ 対戦相手によって「全試合の履歴」がリセットされました。" 
-                                : "⚠️ 対戦相手によって「現在の試合」がやり直しになりました。";
+                            let msg = "⚠️ 対戦相手によって「現在の試合」がやり直しになりました。";
+                            if (data.resetEvent.type === 'all') msg = "⚠️ 対戦相手によって「全試合の履歴」がリセットされました。";
+                            if (data.resetEvent.type === 'swap') msg = "⚠️ 対戦相手によって「先攻・後攻」が入れ替えられ、試合がリセットされました。";
                             alert(msg);
                         }, 100);
                     }
@@ -530,9 +530,12 @@
                 if (no.innerText !== data.names.o && document.activeElement !== no) no.innerText = data.names.o;
             }
 
+            // 先攻後攻の同期と表示アップデート
             if (data.firstTeam && data.firstTeam !== firstTeam) {
                 firstTeam = data.firstTeam;
                 updateBadges();
+                // 🌟 追加：もし試合開始前なら、即座に光る枠も入れ替える
+                if (turnIndex === 0) initGrid();
             }
 
             const newSelections = data.selections || [];
@@ -638,10 +641,9 @@
         initGrid();
     }
 
-    // 🌟 タイマー操作：自分自身の画面を「即座に」動かし、その上で相手に通知を送る
     function handleTimerToggle() {
         const isEnabled = document.getElementById('timer-toggle').checked;
-        applyTimerToggleLocal(isEnabled); // 通信の返事を待たずに即反映
+        applyTimerToggleLocal(isEnabled); 
         
         if (roomId) roomRef.update({ timerEnabled: isEnabled });
     }
@@ -669,7 +671,7 @@
     function toggleTimerPause() {
         if (!isTimerEnabled || isWaitingForPick) return;
         const newPauseState = !isPaused;
-        applyTimerPauseLocal(newPauseState); // 通信の返事を待たずに即反映
+        applyTimerPauseLocal(newPauseState); 
         
         if (roomId) roomRef.update({ timerPaused: newPauseState });
     }
@@ -712,7 +714,6 @@
         if (!step) return;
 
         if (step.m === 'B') {
-            // 🌟 ホストは「相手のBAN時間が0秒になった時」でも、相手の代わりにスキップボタンを押せる特権を持つ
             if (myRole === 'solo' || myRole === step.t || myRole === hostRole) {
                 if (roomId) {
                     roomRef.child('selections').child(turnIndex).set('TIMEOUT');
@@ -726,7 +727,6 @@
             const msg = document.getElementById('status-msg');
             msg.innerText = `${teamName} - SELECT NOW!`; msg.style.color = "var(--ban-red)";
             
-            // アラートのポップアップは、操作すべき本人にしか出さない
             if (myRole === 'solo' || myRole === step.t) {
                 setTimeout(() => { while(true) { if(confirm(`【時間切れ】\n${teamName}チームの番です。ポケモンを選択してください。`)) break; } }, 100);
             }
@@ -759,9 +759,28 @@
         }
     }
 
+    // 🌟 修正：ドラフト進行中の誤操作防止と、安全なリセット連動
     function toggleFirstPick() { 
-        if (roomId) roomRef.update({ firstTeam: (firstTeam === 'p' ? 'o' : 'p'), selections: [], timerPaused: false });
-        else { firstTeam = (firstTeam === 'p' ? 'o' : 'p'); updateBadges(); resetCurrentDraftLocally(); }
+        if (turnIndex > 0) {
+            if (!confirm("ドラフトがすでに進行中です。\n先攻・後攻を入れ替えて、この試合を「最初からやり直し」ますか？")) {
+                return;
+            }
+        }
+
+        const nextFirst = (firstTeam === 'p' ? 'o' : 'p');
+
+        if (roomId) {
+            roomRef.update({ 
+                firstTeam: nextFirst, 
+                selections: [], 
+                timerPaused: false,
+                resetEvent: { time: Date.now(), by: myRole, type: 'swap' } // スワップによるリセットを相手に通知
+            });
+        } else { 
+            firstTeam = nextFirst; 
+            updateBadges(); 
+            resetCurrentDraftLocally(); 
+        }
     }
 
     function updateBadges() {
