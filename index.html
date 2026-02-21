@@ -37,12 +37,9 @@
             align-items: center;
             min-height: 100vh;
             color: var(--text-main);
-            
-            /* スマホで横並びを維持するために最小幅のみ設定し、幅自体は100%に */
             min-width: 1250px;
             width: 100%;
             overflow-x: auto;
-
             background-image: 
                 radial-gradient(circle at 15% 15%, rgba(161, 112, 255, 0.12) 0%, transparent 45%),
                 radial-gradient(circle at 85% 85%, rgba(255, 157, 82, 0.08) 0%, transparent 45%),
@@ -284,7 +281,6 @@
             width: 100%;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
-
     </style>
 </head>
 <body>
@@ -397,7 +393,6 @@
 </div>
 
 <script>
-    // 🌟 Firebaseの初期化設定（いただいた鍵を使用しています！）
     const firebaseConfig = {
       apiKey: "AIzaSyCTb7Db3ZN-qhCaPrqwfymMG5BTQH_Wpgs",
       authDomain: "unite-fearlessdraft-tool.firebaseapp.com",
@@ -418,6 +413,9 @@
     let isPaused = false;
     let myRole = 'none';
     let currentGameNum = 1;
+    
+    // 追加: リセット通知のための履歴保存用変数
+    let lastResetTimestamp = null; 
 
     const urlParams = new URLSearchParams(window.location.search);
     let roomId = urlParams.get('room');
@@ -443,7 +441,6 @@
         }
 
         if (roomId) {
-            // ゲスト参加時
             roomRef = db.ref('rooms/' + roomId);
             setupFirebaseListener();
             finishSetup(role);
@@ -451,15 +448,14 @@
             if (role === 'solo') {
                 finishSetup(role);
             } else {
-                // ホスト作成時
                 roomId = Math.random().toString(36).substring(2, 8);
                 hostRole = role;
                 roomRef = db.ref('rooms/' + roomId);
 
-                // データベースに初期情報をセット
                 roomRef.set({
                     hostRole: role, currentGame: 1, firstTeam: 'p',
-                    names: { p: 'PURPLE', o: 'ORANGE' }, selections: []
+                    names: { p: 'PURPLE', o: 'ORANGE' }, selections: [],
+                    timerEnabled: false, timerPaused: false // タイマー初期状態も保存
                 });
                 setupFirebaseListener();
 
@@ -499,11 +495,44 @@
         initGrid();
     }
 
-    // 🌟 相手の画面から送られてきたデータを受け取る魔法の耳
     function setupFirebaseListener() {
         roomRef.on('value', snapshot => {
             const data = snapshot.val();
             if (!data) return;
+
+            // --- 🌟 追加: リセット通知の同期とアラート表示 ---
+            if (data.resetEvent) {
+                if (lastResetTimestamp === null) {
+                    lastResetTimestamp = data.resetEvent.time; 
+                } else if (data.resetEvent.time !== lastResetTimestamp) {
+                    lastResetTimestamp = data.resetEvent.time;
+                    if (data.resetEvent.by !== myRole && myRole !== 'none') {
+                        setTimeout(() => {
+                            const msg = data.resetEvent.type === 'all' 
+                                ? "⚠️ 対戦相手によって「全試合の履歴」がリセットされました。" 
+                                : "⚠️ 対戦相手によって「現在の試合」がやり直しになりました。";
+                            alert(msg);
+                        }, 100);
+                    }
+                }
+            } else if (lastResetTimestamp === null) {
+                lastResetTimestamp = 0;
+            }
+
+            // --- 🌟 追加: タイマーの有効/無効の同期 ---
+            if (data.timerEnabled !== undefined) {
+                const toggle = document.getElementById('timer-toggle');
+                if (toggle.checked !== data.timerEnabled) {
+                    applyTimerToggleLocal(data.timerEnabled);
+                }
+            }
+
+            // --- 🌟 追加: タイマーストップ(一時停止)の同期 ---
+            if (data.timerPaused !== undefined) {
+                if (isPaused !== data.timerPaused) {
+                    applyTimerPauseLocal(data.timerPaused);
+                }
+            }
 
             // チーム名の同期
             if (data.names) {
@@ -520,7 +549,7 @@
 
             const newSelections = data.selections || [];
 
-            // 試合の切り替えの同期
+            // 試合の切り替え・リセットの同期
             if (data.currentGame && data.currentGame !== currentGameNum) {
                 currentGameNum = data.currentGame;
                 if (data.usedP) usedP = new Set(data.usedP); else usedP.clear();
@@ -530,18 +559,16 @@
                 document.getElementById(`tab${currentGameNum}`).classList.add('active');
                 resetCurrentDraftLocally();
             } else if (newSelections.length === 0 && turnIndex > 0) {
-                // 現在の試合のリセットの同期
                 resetCurrentDraftLocally();
             }
 
-            // ポケモン選択の同期（自分の画面に反映させる）
+            // ポケモン選択の同期
             while (turnIndex < newSelections.length) {
                 executeSelectionLocally(newSelections[turnIndex]);
             }
         });
     }
 
-    // 名前の変更をデータベースに送る
     document.querySelectorAll('.editable-name').forEach(el => {
         el.addEventListener('blur', (e) => {
             if (roomId) {
@@ -594,20 +621,17 @@
             if ((step.t === 'p' && usedP.has(name)) || (step.t === 'o' && usedO.has(name))) return;
         }
         
-        // 🌟 変更点: オンラインならデータベースに「これ選んだよ！」と送るだけにする
         if (roomId) {
             roomRef.child('selections').child(turnIndex).set(name);
+            roomRef.update({ timerPaused: false }); // 選んだらストップ状態を自動解除
         } else {
-            // ソロモードならそのまま画面に反映
             executeSelectionLocally(name);
         }
     }
 
-    // 🌟 以前のhandleSelectの中身（実際に画面を動かす処理）を分離しました
     function executeSelectionLocally(name) {
         const step = getSequence()[turnIndex];
         
-        // タイムアウト時のBANスキップ処理
         if (name === 'TIMEOUT' && step.m === 'B') {
             document.getElementById(`${step.t}-ban-${step.i}`).innerHTML = `<div class="ban-none">🚫<div class="ban-none-text">NO BAN</div></div>`;
             turnIndex++; initGrid(); return;
@@ -628,8 +652,48 @@
         initGrid();
     }
 
+    // --- 🌟 タイマー操作の分離と同期 ---
+    function handleTimerToggle() {
+        const isEnabled = document.getElementById('timer-toggle').checked;
+        if (roomId) {
+            roomRef.update({ timerEnabled: isEnabled });
+        } else {
+            applyTimerToggleLocal(isEnabled);
+        }
+    }
+
+    function applyTimerToggleLocal(isEnabled) {
+        document.getElementById('timer-toggle').checked = isEnabled;
+        updateStopBtnUI();
+        if (!isEnabled) {
+            clearInterval(timerInterval);
+            document.getElementById('timer').innerText = "--";
+            isPaused = false;
+        } else {
+            const step = getSequence()[turnIndex];
+            if (step) startTimer(step.m === 'B' ? 15 : 30);
+        }
+    }
+
+    function toggleTimerPause() {
+        if (!document.getElementById('timer-toggle').checked || isWaitingForPick) return;
+        const newPauseState = !isPaused;
+        if (roomId) {
+            roomRef.update({ timerPaused: newPauseState });
+        } else {
+            applyTimerPauseLocal(newPauseState);
+        }
+    }
+
+    function applyTimerPauseLocal(newPauseState) {
+        isPaused = newPauseState;
+        updateStopBtnUI();
+        updateTimerDisplay();
+    }
+    // ------------------------------------
+
     function startTimer(seconds) {
-        clearInterval(timerInterval); isWaitingForPick = false; isPaused = false; updateStopBtnUI();
+        clearInterval(timerInterval); isWaitingForPick = false; updateStopBtnUI();
         if (!document.getElementById('timer-toggle').checked || seconds === 0) return;
         timeLeft = seconds; updateTimerDisplay();
         timerInterval = setInterval(() => {
@@ -647,11 +711,6 @@
         if (isPaused) d.style.opacity = "0.5"; else d.style.opacity = "1";
     }
 
-    function toggleTimerPause() {
-        if (!document.getElementById('timer-toggle').checked || isWaitingForPick) return;
-        isPaused = !isPaused; updateStopBtnUI(); updateTimerDisplay();
-    }
-
     function updateStopBtnUI() {
         const btn = document.getElementById('timer-stop-btn');
         const isEnabled = document.getElementById('timer-toggle').checked;
@@ -665,9 +724,11 @@
         if (!step) return;
 
         if (step.m === 'B') {
-            // 🌟 自分のターンかホストの場合のみ、タイムアウト処理を送信
             if (myRole === 'solo' || myRole === step.t) {
-                if (roomId) roomRef.child('selections').child(turnIndex).set('TIMEOUT');
+                if (roomId) {
+                    roomRef.child('selections').child(turnIndex).set('TIMEOUT');
+                    roomRef.update({ timerPaused: false });
+                }
                 else executeSelectionLocally('TIMEOUT');
             }
         } else {
@@ -707,14 +768,8 @@
         }
     }
 
-    function handleTimerToggle() {
-        const isEnabled = document.getElementById('timer-toggle').checked; updateStopBtnUI();
-        if (!isEnabled) { clearInterval(timerInterval); document.getElementById('timer').innerText = "--"; isPaused = false; }
-        else { const step = getSequence()[turnIndex]; if (step) { startTimer((step.m === 'B') ? 15 : 30); } }
-    }
-
     function toggleFirstPick() { 
-        if (roomId) roomRef.update({ firstTeam: (firstTeam === 'p' ? 'o' : 'p'), selections: [] });
+        if (roomId) roomRef.update({ firstTeam: (firstTeam === 'p' ? 'o' : 'p'), selections: [], timerPaused: false });
         else { firstTeam = (firstTeam === 'p' ? 'o' : 'p'); updateBadges(); resetCurrentDraftLocally(); }
     }
 
@@ -731,10 +786,16 @@
         initGrid(); 
     }
     
+    // --- 🌟 リセット通知を送信するように変更 ---
     function resetCurrentGame() {
         if(confirm("現在の進行状況を最初からやり直しますか？\n（他の試合のPick履歴には影響しません）")) {
-            if (roomId) roomRef.child('selections').remove();
-            else resetCurrentDraftLocally();
+            if (roomId) {
+                roomRef.update({ 
+                    selections: [], 
+                    timerPaused: false,
+                    resetEvent: { time: Date.now(), by: myRole, type: 'current' } 
+                });
+            } else resetCurrentDraftLocally();
         }
     }
 
@@ -743,7 +804,7 @@
         document.querySelectorAll('#picks-orange .pick-slot').forEach(s => { if(s.dataset.pokemon) usedO.add(s.dataset.pokemon); });
         
         if (roomId) {
-            roomRef.update({ currentGame: num, selections: [], usedP: Array.from(usedP), usedO: Array.from(usedO) });
+            roomRef.update({ currentGame: num, selections: [], usedP: Array.from(usedP), usedO: Array.from(usedO), timerPaused: false });
         } else {
             document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
             document.getElementById(`tab${num}`).classList.add('active'); resetCurrentDraftLocally();
@@ -753,7 +814,11 @@
     function resetAll() { 
         if(confirm("全試合の記録をリセットしますか？")) { 
             if (roomId) {
-                roomRef.set({ hostRole: hostRole, currentGame: 1, firstTeam: 'p', names: { p: 'PURPLE', o: 'ORANGE' }, selections: [], usedP: [], usedO: [] });
+                // updateを使用し、必要なデータだけ初期化＆通知を発行
+                roomRef.update({ 
+                    currentGame: 1, firstTeam: 'p', selections: [], usedP: [], usedO: [], timerPaused: false,
+                    resetEvent: { time: Date.now(), by: myRole, type: 'all' } 
+                });
             } else {
                 usedP.clear(); usedO.clear(); changeGame(1); 
             }
