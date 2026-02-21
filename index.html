@@ -18,7 +18,6 @@
             --text-main: #ffffff;
         }
 
-        /* 全体フェードイン */
         @keyframes scene-in {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -44,7 +43,6 @@
             animation: scene-in 0.8s var(--ios-ease) forwards;
         }
 
-        /* --- ネットワークステータスUI --- */
         .net-status {
             position: fixed; top: 10px; right: 10px; z-index: 1000;
             background: rgba(0,0,0,0.85); padding: 12px 18px; border-radius: 20px;
@@ -52,91 +50,45 @@
             backdrop-filter: blur(10px); color: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         .net-status b { color: var(--timer-gold); }
-        .role-badge { 
-            display: inline-block; padding: 2px 8px; border-radius: 6px; 
-            font-weight: 900; margin-left: 5px; font-size: 0.7rem; 
-        }
+        .role-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-weight: 900; margin-left: 5px; font-size: 0.7rem; }
         .role-p { background: var(--purple); color: #fff; }
         .role-o { background: var(--orange); color: #fff; }
         .role-s { background: #555; color: #fff; }
-        .create-btn {
-            background: var(--purple); color: white; border: none; padding: 6px 12px;
-            border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 8px; width: 100%;
-        }
+        .create-btn { background: var(--purple); color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 8px; width: 100%; }
 
         .header-section {
-            width: 96%;
-            max-width: 1200px;
-            background: var(--glass);
-            backdrop-filter: blur(25px);
-            padding: 24px;
-            border-radius: 30px;
-            margin-bottom: 24px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 96%; max-width: 1200px; background: var(--glass); backdrop-filter: blur(25px);
+            padding: 24px; border-radius: 30px; margin-bottom: 24px; text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .game-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
         .game-tabs button {
-            padding: 10px 24px; border: none; border-radius: 12px;
-            background: rgba(255,255,255,0.06); color: #888;
-            cursor: pointer; font-weight: 800; transition: all 0.3s var(--ios-ease);
+            padding: 10px 24px; border: none; border-radius: 12px; background: rgba(255,255,255,0.06); color: #888;
+            cursor: pointer; font-weight: 800; transition: all 0.3s;
         }
-        .game-tabs button:hover { transform: translateY(-2px); background: rgba(255,255,255,0.1); }
-        .game-tabs button.active { 
-            background: #fff; color: #000; 
-            box-shadow: 0 0 20px rgba(255,255,255,0.4);
-            transform: scale(1.05);
-        }
+        .game-tabs button.active { background: #fff; color: #000; box-shadow: 0 0 20px rgba(255,255,255,0.4); transform: scale(1.05); }
 
         .admin-controls { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-        .swap-btn { 
-            padding: 10px 28px; border-radius: 50px; background: rgba(255,255,255,0.08); 
-            color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
-            transition: 0.3s;
-        }
-        .swap-btn:active { transform: scale(0.95); }
+        .swap-btn { padding: 10px 28px; border-radius: 50px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: 0.3s; }
         .reset-btn { background: transparent; color: var(--ban-red); border: none; cursor: pointer; opacity: 0.6; font-size: 0.8rem; transition: 0.3s; }
         .reset-btn:hover { opacity: 1; text-decoration: underline; }
 
-        .timer-controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            background: rgba(255,255,255,0.05);
-            padding: 8px 20px;
-            border-radius: 50px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .stop-btn {
-            background: #444; color: white; border: none; padding: 4px 15px; 
-            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem;
-            transition: 0.2s;
-        }
-        .stop-btn:hover:not(:disabled) { background: #666; }
+        .timer-controls { display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); }
+        .stop-btn { background: #444; color: white; border: none; padding: 4px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem; transition: 0.2s; }
         .stop-btn.paused { background: var(--timer-gold); color: #000; }
 
         .status-container { margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 40px; }
         .status-bar { font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; transition: 0.3s; }
-        
-        .timer-display { 
-            font-size: 2.8rem; font-weight: 900; color: var(--timer-gold); 
-            min-width: 120px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
-            transition: color 0.3s;
-        }
-        .timer-urgent { animation: heartbeat 1s infinite; color: var(--ban-red) !important; }
-        .timer-timeout { animation: blink-red 0.5s infinite; color: var(--ban-red) !important; font-size: 2rem; }
+        .timer-display { font-size: 2.8rem; font-weight: 900; color: var(--timer-gold); min-width: 120px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
 
         .main-layout { display: flex; width: 98%; max-width: 1600px; justify-content: center; gap: 24px; padding: 0 20px; box-sizing: border-box; }
         .side-panel { width: 340px; flex-shrink: 0; }
-        .team-box { background: var(--glass); border-radius: 35px; padding: 24px; border: 2px solid rgba(255,255,255,0.05); transition: all 0.5s var(--ios-ease); }
+        .team-box { background: var(--glass); border-radius: 35px; padding: 24px; border: 2px solid rgba(255,255,255,0.05); transition: all 0.5s; }
         .team-purple.active-team { border-color: var(--purple); box-shadow: 0 0 20px rgba(161,112,255,0.2); }
         .team-orange.active-team { border-color: var(--orange); box-shadow: 0 0 20px rgba(255,157,82,0.2); }
 
         .editable-name { display: inline-block; cursor: text; padding: 2px 8px; border-radius: 8px; transition: 0.3s; outline: none; }
-        .editable-name:hover { background: rgba(255,255,255,0.1); }
-        
         .ban-group { display: flex; gap: 10px; margin-bottom: 25px; }
         .ban-slot { flex: 1; aspect-ratio: 1/1; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         .ban-slot img { width: 100%; height: 100%; object-fit: cover; }
@@ -150,7 +102,6 @@
         .pokemon-grid::-webkit-scrollbar { display: none; }
 
         .pokemon-card { background: rgba(255,255,255,0.08); border-radius: 18px; cursor: pointer; padding: 12px 8px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.2; }
-        .pokemon-card:hover { transform: scale(1.05); background: rgba(255,255,255,0.15); }
         .pokemon-card img { width: 80px; height: 80px; object-fit: contain; }
         .pokemon-card .name { font-size: 0.75rem; font-weight: 900; color: #ffffff; margin-top: 8px; }
 
@@ -159,7 +110,6 @@
         .used-p-bg { background: rgba(161, 112, 255, 0.4); opacity: 1; }
         .used-o-bg { background: rgba(255, 157, 82, 0.4); opacity: 1; }
         .current-used { opacity: 0.1; filter: grayscale(1); pointer-events: none; }
-        
         .active-turn-slot { border: 2px solid #fff !important; box-shadow: 0 0 15px #fff; background: rgba(255,255,255,0.2) !important; }
 
         .footer-disclaimer { margin-top: 50px; padding: 20px; font-size: 0.5rem; color: rgba(255, 255, 255, 0.4); text-align: center; }
@@ -235,7 +185,6 @@
     let isPaused = false, currentGame = 1;
     let peer = null, connections = [], hostConn = null, myRole = 'single';
 
-    // --- ネットワーク機能 ---
     function initNetwork() {
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room');
@@ -251,7 +200,6 @@
             if (myRole === 'single') updateRoleDisplay('host');
             connections.push(conn);
             setupConn(conn);
-            // 接続人数の更新を全員にブロードキャスト
             setTimeout(() => {
                 const role = (connections.length === 1) ? 'guest' : 'spectator';
                 conn.send({ type: 'assignRole', role: role });
@@ -264,7 +212,7 @@
     function createRoom() {
         const url = window.location.origin + window.location.pathname + '?room=' + peer.id;
         navigator.clipboard.writeText(url).then(() => {
-            alert("URLをコピーしました！相手に送ってください。");
+            alert("対戦用URLをコピーしました！相手に送ってください。\nあなたは【紫サイド(ホスト)】です。");
             updateRoleDisplay('host');
             document.getElementById('btn-create').style.display = 'none';
         });
@@ -288,19 +236,24 @@
             if (data.type === 'timerPause') { isPaused = data.paused; updateTimerDisplay(); }
             if (data.type === 'names') { document.getElementById('name-p').innerText = data.p; document.getElementById('name-o').innerText = data.o; }
             if (data.type === 'resetReq') {
-                const msg = data.full ? "相手が【全リセット】を希望しています。同意しますか？" : "相手が【このGameのリセット】を希望しています。同意しますか？";
-                if (confirm(msg)) { if (data.full) resetAll(false); else resetCurrentDraft(false); }
+                const msg = data.full ? "相手が【全試合リセット】を希望しています。同意しますか？" : "相手が【現在のGameのリセット】を希望しています。同意しますか？";
+                if (confirm(msg)) {
+                    if (data.full) resetAll(true); else resetCurrentDraft(true);
+                }
             }
         });
         c.on('close', () => {
             connections = connections.filter(conn => conn !== c);
-            broadcast({ type: 'peerCount', count: connections.length + 1 });
+            if (myRole === 'host') broadcast({ type: 'peerCount', count: connections.length + 1 });
         });
     }
 
     function broadcast(data) {
-        if (myRole === 'host') connections.forEach(c => c.send(data));
-        else if (hostConn) hostConn.send(data);
+        if (myRole === 'host') {
+            connections.forEach(c => { if(c.open) c.send(data); });
+        } else if (hostConn && hostConn.open) {
+            hostConn.send(data);
+        }
     }
 
     function updateRoleDisplay(role) {
@@ -310,7 +263,6 @@
         el.className = 'role-badge ' + (role === 'host' ? 'role-p' : role === 'guest' ? 'role-o' : role === 'spectator' ? 'role-s' : '');
     }
 
-    // --- ゲームロジック ---
     function getSequence() {
         const p1 = firstTeam, p2 = (firstTeam === 'p' ? 'o' : 'p');
         return [
@@ -373,6 +325,7 @@
     function updateTimerDisplay() {
         document.getElementById('timer').innerText = timeLeft;
         document.getElementById('timer-stop-btn').innerText = isPaused ? "再開" : "ストップ";
+        document.getElementById('timer-stop-btn').className = "stop-btn" + (isPaused ? " paused" : "");
     }
 
     function handleTimerToggle(isLocal) {
@@ -401,27 +354,30 @@
             startTimer(step.time);
         } else {
             statusMsg.innerText = "COMPLETE"; statusMsg.style.color = "#fff";
+            clearInterval(timerInterval); document.getElementById('timer').innerText = "--";
         }
     }
 
     function requestReset(isFull) {
+        if (myRole === 'single') { if (isFull) resetAll(false); else resetCurrentDraft(false); return; }
         if (confirm("相手にリセットの同意確認を送ります。よろしいですか？")) {
             broadcast({ type: 'resetReq', full: isFull });
         }
     }
 
-    function resetCurrentDraft(isLocal) {
-        turnIndex = 0; currentRoundUsed.clear();
-        document.querySelectorAll('.pick-slot').forEach((s, i) => s.innerHTML = `Pick ${i+1}`);
-        document.querySelectorAll('.ban-slot').forEach(s => s.innerHTML = "");
+    function resetCurrentDraft(shouldBroadcast) {
+        turnIndex = 0; currentRoundUsed.clear(); isPaused = false;
+        document.querySelectorAll('.pick-slot').forEach((s, i) => { s.innerHTML = `Pick ${i+1}`; s.classList.remove('active-turn-slot'); delete s.dataset.pokemon; });
+        document.querySelectorAll('.ban-slot').forEach(s => { s.innerHTML = ""; s.classList.remove('active-turn-slot'); });
         initGrid();
-        if (isLocal) broadcast({ type: 'sync', state: getFullStateData() });
+        if (shouldBroadcast) broadcast({ type: 'sync', state: getFullStateData() });
     }
 
-    function resetAll(isLocal) {
+    function resetAll(shouldBroadcast) {
         usedP.clear(); usedO.clear(); currentGame = 1;
-        resetCurrentDraft(false);
-        if (isLocal) broadcast({ type: 'sync', state: getFullStateData() });
+        document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab1`).classList.add('active');
+        resetCurrentDraft(shouldBroadcast);
     }
 
     function changeGame(num, isLocal) {
@@ -430,20 +386,26 @@
         currentGame = num;
         document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
         document.getElementById(`tab${num}`).classList.add('active');
-        resetCurrentDraft(false);
-        if (isLocal) broadcast({ type: 'game', num: num });
+        resetCurrentDraft(isLocal);
+    }
+
+    function toggleFirstPick(isLocal) {
+        firstTeam = (firstTeam === 'p' ? 'o' : 'p');
+        const bp = document.getElementById('badge-p'), bo = document.getElementById('badge-o');
+        bp.innerText = firstTeam === 'p' ? '先攻' : '後攻';
+        bo.innerText = firstTeam === 'o' ? '先攻' : '後攻';
+        resetCurrentDraft(isLocal);
+        if (isLocal) broadcast({ type: 'swap' });
     }
 
     function sendFullState(c) {
-        c.send({ type: 'sync', state: getFullStateData() });
+        if(c.open) c.send({ type: 'sync', state: getFullStateData() });
     }
 
     function getFullStateData() {
         return {
             usedP: Array.from(usedP), usedO: Array.from(usedO), currentRoundUsed: Array.from(currentRoundUsed),
             turnIndex, firstTeam, currentGame,
-            htmlP: document.getElementById('picks-purple').innerHTML,
-            htmlO: document.getElementById('picks-orange').innerHTML,
             nameP: document.getElementById('name-p').innerText,
             nameO: document.getElementById('name-o').innerText
         };
@@ -451,10 +413,15 @@
 
     function applyState(s) {
         usedP = new Set(s.usedP); usedO = new Set(s.usedO); currentRoundUsed = new Set(s.currentRoundUsed);
-        turnIndex = s.turnIndex; currentGame = s.currentGame;
+        turnIndex = s.turnIndex; firstTeam = s.firstTeam; currentGame = s.currentGame;
         document.getElementById('name-p').innerText = s.nameP;
         document.getElementById('name-o').innerText = s.nameO;
-        initGrid();
+        document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab${currentGame}`).classList.add('active');
+        const bp = document.getElementById('badge-p'), bo = document.getElementById('badge-o');
+        bp.innerText = firstTeam === 'p' ? '先攻' : '後攻';
+        bo.innerText = firstTeam === 'o' ? '先攻' : '後攻';
+        resetCurrentDraft(false);
     }
 
     function syncNames() { broadcast({ type: 'names', p: document.getElementById('name-p').innerText, o: document.getElementById('name-o').innerText }); }
