@@ -21,7 +21,6 @@
             --text-main: #ffffff;
         }
 
-        /* 全体フェードイン */
         @keyframes scene-in {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -411,10 +410,12 @@
     let turnIndex = 0, firstTeam = 'p', timeLeft = 0, timerInterval = null;
     let isWaitingForPick = false; 
     let isPaused = false;
+    
+    // 🌟 追加：タイマーのON/OFF状態を絶対に間違えないための専用変数
+    let isTimerEnabled = false; 
+    
     let myRole = 'none';
     let currentGameNum = 1;
-    
-    // 追加: リセット通知のための履歴保存用変数
     let lastResetTimestamp = null; 
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -455,7 +456,7 @@
                 roomRef.set({
                     hostRole: role, currentGame: 1, firstTeam: 'p',
                     names: { p: 'PURPLE', o: 'ORANGE' }, selections: [],
-                    timerEnabled: false, timerPaused: false // タイマー初期状態も保存
+                    timerEnabled: false, timerPaused: false
                 });
                 setupFirebaseListener();
 
@@ -500,7 +501,6 @@
             const data = snapshot.val();
             if (!data) return;
 
-            // --- 🌟 追加: リセット通知の同期とアラート表示 ---
             if (data.resetEvent) {
                 if (lastResetTimestamp === null) {
                     lastResetTimestamp = data.resetEvent.time; 
@@ -519,29 +519,25 @@
                 lastResetTimestamp = 0;
             }
 
-            // --- 🌟 追加: タイマーの有効/無効の同期 ---
+            // 🌟 修正：画面のチェックボックスではなく、プログラムの変数を使って確実に同期させる
             if (data.timerEnabled !== undefined) {
-                const toggle = document.getElementById('timer-toggle');
-                if (toggle.checked !== data.timerEnabled) {
+                if (isTimerEnabled !== data.timerEnabled) {
                     applyTimerToggleLocal(data.timerEnabled);
                 }
             }
 
-            // --- 🌟 追加: タイマーストップ(一時停止)の同期 ---
             if (data.timerPaused !== undefined) {
                 if (isPaused !== data.timerPaused) {
                     applyTimerPauseLocal(data.timerPaused);
                 }
             }
 
-            // チーム名の同期
             if (data.names) {
                 const np = document.getElementById('name-p'), no = document.getElementById('name-o');
                 if (np.innerText !== data.names.p && document.activeElement !== np) np.innerText = data.names.p;
                 if (no.innerText !== data.names.o && document.activeElement !== no) no.innerText = data.names.o;
             }
 
-            // 先攻後攻の同期
             if (data.firstTeam && data.firstTeam !== firstTeam) {
                 firstTeam = data.firstTeam;
                 updateBadges();
@@ -549,7 +545,6 @@
 
             const newSelections = data.selections || [];
 
-            // 試合の切り替え・リセットの同期
             if (data.currentGame && data.currentGame !== currentGameNum) {
                 currentGameNum = data.currentGame;
                 if (data.usedP) usedP = new Set(data.usedP); else usedP.clear();
@@ -562,7 +557,6 @@
                 resetCurrentDraftLocally();
             }
 
-            // ポケモン選択の同期
             while (turnIndex < newSelections.length) {
                 executeSelectionLocally(newSelections[turnIndex]);
             }
@@ -623,7 +617,7 @@
         
         if (roomId) {
             roomRef.child('selections').child(turnIndex).set(name);
-            roomRef.update({ timerPaused: false }); // 選んだらストップ状態を自動解除
+            roomRef.update({ timerPaused: false }); 
         } else {
             executeSelectionLocally(name);
         }
@@ -652,31 +646,40 @@
         initGrid();
     }
 
-    // --- 🌟 タイマー操作の分離と同期 ---
+    // 🌟 修正：タイマーのON/OFF操作に関する安全な処理
     function handleTimerToggle() {
         const isEnabled = document.getElementById('timer-toggle').checked;
         if (roomId) {
+            // 通信相手に「変更したよ」と伝えるだけにする
             roomRef.update({ timerEnabled: isEnabled });
         } else {
+            // ソロモードの場合はそのまま適用する
             applyTimerToggleLocal(isEnabled);
         }
     }
 
     function applyTimerToggleLocal(isEnabled) {
+        isTimerEnabled = isEnabled; // 変数を確実に更新
         document.getElementById('timer-toggle').checked = isEnabled;
         updateStopBtnUI();
+        
         if (!isEnabled) {
+            // OFFにされたらタイマーを完全に破壊する
             clearInterval(timerInterval);
             document.getElementById('timer').innerText = "--";
+            document.getElementById('timer').className = "timer-display"; // 赤文字点滅などを初期化
             isPaused = false;
+            isWaitingForPick = false; // タイムアウトのアラート待機状態なども解除
         } else {
+            // ONにされたら、いま動くべき秒数で再スタート
             const step = getSequence()[turnIndex];
-            if (step) startTimer(step.m === 'B' ? 15 : 30);
+            if (step && !isWaitingForPick) startTimer(step.m === 'B' ? 15 : 30);
         }
     }
 
     function toggleTimerPause() {
-        if (!document.getElementById('timer-toggle').checked || isWaitingForPick) return;
+        // 🌟 修正：画面ではなく変数でチェック
+        if (!isTimerEnabled || isWaitingForPick) return;
         const newPauseState = !isPaused;
         if (roomId) {
             roomRef.update({ timerPaused: newPauseState });
@@ -690,11 +693,13 @@
         updateStopBtnUI();
         updateTimerDisplay();
     }
-    // ------------------------------------
 
     function startTimer(seconds) {
         clearInterval(timerInterval); isWaitingForPick = false; updateStopBtnUI();
-        if (!document.getElementById('timer-toggle').checked || seconds === 0) return;
+        
+        // 🌟 修正：画面ではなく変数でチェック
+        if (!isTimerEnabled || seconds === 0) return;
+        
         timeLeft = seconds; updateTimerDisplay();
         timerInterval = setInterval(() => {
             if (!isPaused) {
@@ -713,8 +718,8 @@
 
     function updateStopBtnUI() {
         const btn = document.getElementById('timer-stop-btn');
-        const isEnabled = document.getElementById('timer-toggle').checked;
-        btn.disabled = !isEnabled;
+        // 🌟 修正：画面ではなく変数でチェック
+        btn.disabled = !isTimerEnabled;
         if (isPaused) { btn.innerText = "再開"; btn.classList.add('paused'); }
         else { btn.innerText = "ストップ"; btn.classList.remove('paused'); }
     }
@@ -786,7 +791,6 @@
         initGrid(); 
     }
     
-    // --- 🌟 リセット通知を送信するように変更 ---
     function resetCurrentGame() {
         if(confirm("現在の進行状況を最初からやり直しますか？\n（他の試合のPick履歴には影響しません）")) {
             if (roomId) {
@@ -814,7 +818,6 @@
     function resetAll() { 
         if(confirm("全試合の記録をリセットしますか？")) { 
             if (roomId) {
-                // updateを使用し、必要なデータだけ初期化＆通知を発行
                 roomRef.update({ 
                     currentGame: 1, firstTeam: 'p', selections: [], usedP: [], usedO: [], timerPaused: false,
                     resetEvent: { time: Date.now(), by: myRole, type: 'all' } 
