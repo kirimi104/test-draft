@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280">
-    <title>UNITE Fearless Draft - Slot Manage Edition</title>
+    <title>UNITE Fearless Draft - Hybrid Edition</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -41,11 +41,12 @@
         }
         .role-btn:not(:disabled):hover { opacity: 1; transform: translateY(-1px); }
         .role-btn:disabled { cursor: not-allowed; background: #222 !important; color: #555; }
-        .role-btn.active { opacity: 1; ring: 2px solid white; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .role-btn.active { opacity: 1; outline: 2px solid white; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
         
         .btn-p { background: var(--purple); }
         .btn-o { background: var(--orange); }
-        .btn-s { background: #555; grid-column: span 2; }
+        .btn-s { background: #555; }
+        .btn-single { background: #444; }
         .create-btn { background: #fff; color: #000; width: 100%; border-radius: 8px; padding: 8px; margin-top: 10px; border: none; font-weight: 900; cursor: pointer; }
 
         .role-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-weight: 900; margin-left: 5px; font-size: 0.7rem; }
@@ -112,7 +113,8 @@
     <div class="role-btn-group">
         <button id="btn-role-p" class="role-btn btn-p" onclick="selectRole('host')">紫として接続</button>
         <button id="btn-role-o" class="role-btn btn-o" onclick="selectRole('guest')">橙として接続</button>
-        <button id="btn-role-s" class="role-btn btn-s" onclick="selectRole('spectator')">観戦者として接続</button>
+        <button id="btn-role-s" class="role-btn btn-s" onclick="selectRole('spectator')">観戦者として</button>
+        <button id="btn-role-single" class="role-btn btn-single" onclick="selectRole('single')">1人で操作する</button>
     </div>
     <button class="create-btn" id="btn-create" onclick="createRoom()">対戦URLを発行</button>
 </div>
@@ -135,8 +137,8 @@
                 <button id="timer-stop-btn" class="stop-btn" onclick="toggleTimerPause(true)" disabled>ストップ</button>
             </div>
         </div>
-        <button class="reset-btn" onclick="requestReset(false)">現在のGAMEをリセット</button>
-        <button class="reset-btn" onclick="requestReset(true)" style="margin-top: -8px;">全試合をリセット</button>
+        <button class="reset-btn" onclick="forcedReset(false)">現在のGAMEをリセット</button>
+        <button class="reset-btn" onclick="forcedReset(true)" style="margin-top: -8px;">全試合をリセット</button>
     </div>
     <div class="status-container">
         <div class="status-bar" id="status-msg">READY</div>
@@ -175,7 +177,7 @@
     let usedP = new Set(), usedO = new Set(), currentRoundUsed = new Set();
     let turnIndex = 0, firstTeam = 'p', timeLeft = 0, timerInterval = null;
     let isPaused = false, currentGame = 1;
-    let peer = null, connections = [], hostConn = null, myRole = 'spectator';
+    let peer = null, connections = [], hostConn = null, myRole = 'single';
     let roleCounts = { host: 0, guest: 0, spectator: 0 };
 
     function initNetwork() {
@@ -189,7 +191,11 @@
                 hostConn = peer.connect(roomId);
                 setupConn(hostConn);
                 document.getElementById('btn-create').style.display = 'none';
+                myRole = 'spectator';
+            } else {
+                myRole = 'single';
             }
+            updateSlotUI(roleCounts);
         });
 
         peer.on('connection', conn => {
@@ -198,19 +204,26 @@
             sendFullState(conn);
             broadcastCounts();
         });
-
-        peer.on('error', () => alert("ホストが見つからないか、通信エラーです。"));
     }
 
-    function createRoom() {
-        const url = window.location.origin + window.location.pathname + '?room=' + peer.id;
-        navigator.clipboard.writeText(url).then(() => {
-            alert("URLをコピーしました。相手に送ってください。\nあなたは自動的に【紫(ホスト)】になります。");
-            selectRole('host');
-            document.getElementById('btn-create').style.display = 'none';
-        });
+    function selectRole(role) {
+        if (role === 'single') {
+            if(hostConn || connections.length > 0) {
+                if(!confirm("通信を終了して1人モードに切り替えますか？")) return;
+            }
+            myRole = 'single';
+            if(hostConn) { hostConn.close(); hostConn = null; }
+            connections.forEach(c => c.close());
+            connections = [];
+            updateSlotUI({ host: 0, guest: 0, spectator: 0 });
+            return;
+        }
+
+        if (role === 'host' && !hostConn) { myRole = 'host'; broadcastCounts(); return; }
+        if (hostConn) hostConn.send({ type: 'roleRequest', role: role });
     }
 
+    // --- 同期系関数 ---
     function setupConn(c) {
         c.on('data', data => {
             if (data.type === 'syncCounts') updateSlotUI(data.counts);
@@ -220,86 +233,62 @@
             if (data.type === 'sync') applyState(data.state);
             if (data.type === 'timerToggle') { document.getElementById('timer-toggle').checked = data.checked; handleTimerToggle(false); }
             if (data.type === 'timerPause') { isPaused = data.paused; updateTimerDisplay(); }
-            if (data.type === 'resetReq') {
-                if (confirm("相手がリセットを希望しています。同意しますか？")) {
-                    if (data.full) resetAll(true); else resetCurrentDraft(true);
-                }
-            }
             if (data.type === 'names') { document.getElementById('name-p').innerText = data.p; document.getElementById('name-o').innerText = data.o; }
+            if (data.type === 'forcedReset') applyState(data.state);
+            if (data.type === 'resetRequest') { if(confirm("リセット依頼がありました。実行しますか？")) forcedReset(data.full); }
         });
         c.on('close', () => {
-            if (c === hostConn) alert("ホストとの接続が切れました。再読み込みしてください。");
             connections = connections.filter(conn => conn !== c);
             broadcastCounts();
         });
     }
 
-    function selectRole(role) {
-        if (role === 'host' && !hostConn) { // 自分が最初のホストになる場合
-            myRole = 'host';
-            broadcastCounts();
-            return;
-        }
-        if (hostConn) {
-            hostConn.send({ type: 'roleRequest', role: role });
-        }
-    }
-
     function handleRoleRequest(conn, role) {
-        // 人数制限チェック
         if (role === 'host' && connections.some(c => c.myAssignedRole === 'host')) return;
         if (role === 'guest' && connections.some(c => c.myAssignedRole === 'guest')) return;
-        
         conn.myAssignedRole = role;
         conn.send({ type: 'assignRole', role: role });
         broadcastCounts();
     }
 
     function broadcastCounts() {
+        if (myRole === 'single') return;
         roleCounts = { host: (myRole === 'host' ? 1 : 0), guest: (myRole === 'guest' ? 1 : 0), spectator: (myRole === 'spectator' ? 1 : 0) };
         connections.forEach(c => {
             if (c.myAssignedRole === 'host') roleCounts.host++;
             if (c.myAssignedRole === 'guest') roleCounts.guest++;
             if (c.myAssignedRole === 'spectator') roleCounts.spectator++;
         });
-        const data = { type: 'syncCounts', counts: roleCounts };
         updateSlotUI(roleCounts);
-        connections.forEach(c => { if(c.open) c.send(data); });
+        connections.forEach(c => { if(c.open) c.send({ type: 'syncCounts', counts: roleCounts }); });
     }
 
     function updateSlotUI(counts) {
         document.getElementById('count-p').innerText = `${counts.host}/1`;
         document.getElementById('count-o').innerText = `${counts.guest}/1`;
         document.getElementById('count-s').innerText = counts.spectator;
-
         document.getElementById('btn-role-p').disabled = (counts.host >= 1 && myRole !== 'host');
         document.getElementById('btn-role-o').disabled = (counts.guest >= 1 && myRole !== 'guest');
-        
         document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
         if (myRole === 'host') document.getElementById('btn-role-p').classList.add('active');
         if (myRole === 'guest') document.getElementById('btn-role-o').classList.add('active');
         if (myRole === 'spectator') document.getElementById('btn-role-s').classList.add('active');
-    }
-
-    function broadcast(data) {
-        if (myRole === 'host') {
-            connections.forEach(c => { if(c.open) c.send(data); });
-        } else if (hostConn && hostConn.open) {
-            hostConn.send(data);
-        }
+        if (myRole === 'single') document.getElementById('btn-role-single').classList.add('active');
     }
 
     // --- ゲームロジック ---
     function handleSelect(name, isLocal) {
         const step = getSequence()[turnIndex];
         if (!step || currentRoundUsed.has(name)) return;
-        if (isLocal) {
+        
+        if (isLocal && myRole !== 'single') {
             if (myRole === 'spectator') return;
             if (myRole === 'host' && step.t !== 'p') return;
             if (myRole === 'guest' && step.t !== 'o') return;
         }
-        if (step.m === 'P' && ((step.t === 'p' && usedP.has(name)) || (step.t === 'o' && usedO.has(name)))) return;
 
+        if (step.m === 'P' && ((step.t === 'p' && usedP.has(name)) || (step.t === 'o' && usedO.has(name)))) return;
+        
         if (step.m === 'B') {
             document.querySelectorAll('.ban-group')[step.t === 'p' ? 0 : 1].children[step.i].innerHTML = `<img src="img/${name}.png"><div class="ban-label">${name}</div>`;
         } else {
@@ -309,35 +298,32 @@
         }
         currentRoundUsed.add(name);
         turnIndex++;
-        if (isLocal) broadcast({ type: 'action', name: name });
+        if (isLocal && myRole !== 'single') broadcast({ type: 'action', name: name });
         initGrid();
     }
 
-    function handleTimerToggle(isLocal) {
-        const checked = document.getElementById('timer-toggle').checked;
-        document.getElementById('timer-stop-btn').disabled = !checked;
-        if (!checked) { clearInterval(timerInterval); document.getElementById('timer').innerText = "--"; }
-        else { highlightTurn(); }
-        if (isLocal) broadcast({ type: 'timerToggle', checked: checked });
+    function forcedReset(isFull) {
+        if (myRole !== 'host' && myRole !== 'single') {
+            if (confirm("ホストにリセットを依頼しますか？")) broadcast({ type: 'resetRequest', full: isFull });
+            return;
+        }
+        if (isFull) resetAll(false); else resetCurrentDraft(false);
+        if (myRole === 'host') broadcast({ type: 'forcedReset', full: isFull, state: getFullStateData() });
     }
 
-    function toggleTimerPause(isLocal) {
-        isPaused = !isPaused; updateTimerDisplay();
-        if (isLocal) broadcast({ type: 'timerPause', paused: isPaused });
+    function resetCurrentDraft(shouldBroadcast) {
+        turnIndex = 0; currentRoundUsed.clear(); isPaused = false;
+        document.querySelectorAll('.pick-slot').forEach((s, i) => { s.innerHTML = `Pick ${i+1}`; s.classList.remove('active-turn-slot'); delete s.dataset.pokemon; });
+        document.querySelectorAll('.ban-slot').forEach(s => s.innerHTML = "");
+        initGrid();
+        if (shouldBroadcast && myRole !== 'single') broadcast({ type: 'sync', state: getFullStateData() });
     }
 
-    function startTimer(sec) {
-        clearInterval(timerInterval);
-        if (!document.getElementById('timer-toggle').checked || sec === 0) return;
-        timeLeft = sec; isPaused = false; updateTimerDisplay();
-        timerInterval = setInterval(() => {
-            if (!isPaused) { timeLeft--; updateTimerDisplay(); if (timeLeft <= 0) clearInterval(timerInterval); }
-        }, 1000);
-    }
-
-    function updateTimerDisplay() {
-        document.getElementById('timer').innerText = timeLeft;
-        document.getElementById('timer-stop-btn').innerText = isPaused ? "再開" : "ストップ";
+    function resetAll(shouldBroadcast) {
+        usedP.clear(); usedO.clear(); currentGame = 1;
+        document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab1`).classList.add('active');
+        resetCurrentDraft(shouldBroadcast);
     }
 
     function highlightTurn() {
@@ -355,23 +341,31 @@
         }
     }
 
-    function requestReset(isFull) {
-        if (confirm("リセットの同意確認を送ります。")) broadcast({ type: 'resetReq', full: isFull });
+    function startTimer(sec) {
+        clearInterval(timerInterval);
+        if (!document.getElementById('timer-toggle').checked || sec === 0) return;
+        timeLeft = sec; isPaused = false; updateTimerDisplay();
+        timerInterval = setInterval(() => {
+            if (!isPaused) { timeLeft--; updateTimerDisplay(); if (timeLeft <= 0) clearInterval(timerInterval); }
+        }, 1000);
     }
 
-    function resetCurrentDraft(shouldBroadcast) {
-        turnIndex = 0; currentRoundUsed.clear(); isPaused = false;
-        document.querySelectorAll('.pick-slot').forEach((s, i) => { s.innerHTML = `Pick ${i+1}`; s.classList.remove('active-turn-slot'); delete s.dataset.pokemon; });
-        document.querySelectorAll('.ban-slot').forEach(s => s.innerHTML = "");
-        initGrid();
-        if (shouldBroadcast) broadcast({ type: 'sync', state: getFullStateData() });
+    function updateTimerDisplay() {
+        document.getElementById('timer').innerText = timeLeft;
+        document.getElementById('timer-stop-btn').innerText = isPaused ? "再開" : "ストップ";
     }
 
-    function resetAll(shouldBroadcast) {
-        usedP.clear(); usedO.clear(); currentGame = 1;
-        document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
-        document.getElementById(`tab1`).classList.add('active');
-        resetCurrentDraft(shouldBroadcast);
+    function handleTimerToggle(isLocal) {
+        const checked = document.getElementById('timer-toggle').checked;
+        document.getElementById('timer-stop-btn').disabled = !checked;
+        if (!checked) { clearInterval(timerInterval); document.getElementById('timer').innerText = "--"; }
+        else { highlightTurn(); }
+        if (isLocal && myRole !== 'single') broadcast({ type: 'timerToggle', checked: checked });
+    }
+
+    function toggleTimerPause(isLocal) {
+        isPaused = !isPaused; updateTimerDisplay();
+        if (isLocal && myRole !== 'single') broadcast({ type: 'timerPause', paused: isPaused });
     }
 
     function changeGame(num, isLocal) {
@@ -388,6 +382,7 @@
         document.getElementById('badge-p').innerText = firstTeam === 'p' ? '先攻' : '後攻';
         document.getElementById('badge-o').innerText = firstTeam === 'o' ? '先攻' : '後攻';
         resetCurrentDraft(isLocal);
+        if (isLocal && myRole !== 'single') broadcast({ type: 'swap' });
     }
 
     function getSequence() {
@@ -417,6 +412,20 @@
         highlightTurn();
     }
 
+    function createRoom() {
+        const url = window.location.origin + window.location.pathname + '?room=' + peer.id;
+        navigator.clipboard.writeText(url).then(() => {
+            alert("URLをコピーしました。\nあなたは自動的に【紫(ホスト)】になります。");
+            selectRole('host');
+            document.getElementById('btn-create').style.display = 'none';
+        });
+    }
+
+    function broadcast(data) {
+        if (myRole === 'host') connections.forEach(c => { if(c.open) c.send(data); });
+        else if (hostConn && hostConn.open) hostConn.send(data);
+    }
+
     function sendFullState(c) {
         if(c.open) c.send({ type: 'sync', state: getFullStateData() });
     }
@@ -434,10 +443,14 @@
         turnIndex = s.turnIndex; firstTeam = s.firstTeam; currentGame = s.currentGame;
         document.getElementById('name-p').innerText = s.nameP;
         document.getElementById('name-o').innerText = s.nameO;
+        document.getElementById('badge-p').innerText = firstTeam === 'p' ? '先攻' : '後攻';
+        document.getElementById('badge-o').innerText = firstTeam === 'o' ? '先攻' : '後攻';
+        document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab${currentGame}`).classList.add('active');
         resetCurrentDraft(false);
     }
 
-    function syncNames() { broadcast({ type: 'names', p: document.getElementById('name-p').innerText, o: document.getElementById('name-o').innerText }); }
+    function syncNames() { if(myRole !== 'single') broadcast({ type: 'names', p: document.getElementById('name-p').innerText, o: document.getElementById('name-o').innerText }); }
 
     initNetwork(); initGrid();
 </script>
