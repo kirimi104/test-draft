@@ -138,6 +138,14 @@
         .stop-btn:hover:not(:disabled) { background: #666; }
         .stop-btn.paused { background: var(--timer-gold); color: #000; }
 
+        /* --- 🌟 退出ボタンのCSS --- */
+        .leave-btn {
+            background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 4px 15px; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 0.75rem;
+            transition: 0.3s; margin-left: 15px;
+        }
+        .leave-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
+
         .status-container { margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 40px; }
         .status-bar { font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; transition: 0.3s; }
         
@@ -191,6 +199,14 @@
 
         .order-badge { font-size: 0.9rem; padding: 4px 12px; border-radius: 50px; background: rgba(255,255,255,0.1); vertical-align: middle; margin-left: 8px; }
         .order-1st { background: #fff; color: #000; box-shadow: 0 0 10px #fff; }
+
+        /* --- 🌟 オンライン表示バッジのCSS --- */
+        .conn-badge {
+            font-size: 0.65rem; padding: 4px 10px; border-radius: 50px; margin-left: 10px;
+            font-weight: 900; transition: 0.4s var(--bounce-ease); display: none; vertical-align: middle;
+        }
+        .conn-online { background: rgba(76, 175, 80, 0.15); color: #4CAF50; border: 1px solid #4CAF50; box-shadow: 0 0 12px rgba(76, 175, 80, 0.4); }
+        .conn-offline { background: rgba(255, 71, 71, 0.1); color: var(--ban-red); border: 1px solid var(--ban-red); opacity: 0.6; }
 
         .ban-group { display: flex; gap: 10px; margin-bottom: 25px; }
         .ban-slot { 
@@ -336,7 +352,11 @@
             <button class="reset-btn reset-current" onclick="resetCurrentGame()">現在の試合をやり直す</button>
             <button class="reset-btn" onclick="resetAll()">全試合をリセット</button>
         </div>
-        <div id="my-role-display" style="font-size: 0.75rem; color: #aaa; margin-top: 5px; background: rgba(255,255,255,0.08); padding: 4px 15px; border-radius: 50px; font-weight: bold; letter-spacing: 1px;">MODE: --</div>
+        
+        <div style="display: flex; align-items: center; justify-content: center; margin-top: 5px;">
+            <div id="my-role-display" style="font-size: 0.75rem; color: #aaa; background: rgba(255,255,255,0.08); padding: 4px 15px; border-radius: 50px; font-weight: bold; letter-spacing: 1px;">MODE: --</div>
+            <button class="leave-btn" onclick="leaveRoom()">🔙 退出・モード変更</button>
+        </div>
     </div>
 
     <div class="status-container">
@@ -351,6 +371,7 @@
             <h2>
                 <span class="editable-name" contenteditable="true" spellcheck="false" id="name-p">PURPLE</span>
                 <span id="badge-p" class="order-badge">先攻</span>
+                <span id="conn-p" class="conn-badge conn-offline">🔴 WAITING</span>
             </h2>
             <div class="ban-group">
                 <div class="ban-slot" id="p-ban-0"></div>
@@ -374,6 +395,7 @@
             <h2>
                 <span class="editable-name" contenteditable="true" spellcheck="false" id="name-o">ORANGE</span>
                 <span id="badge-o" class="order-badge">後攻</span>
+                <span id="conn-o" class="conn-badge conn-offline">🔴 WAITING</span>
             </h2>
             <div class="ban-group">
                 <div class="ban-slot" id="o-ban-0"></div>
@@ -431,6 +453,46 @@
         }
     });
 
+    // 🌟 退出・モード変更ボタンの処理
+    function leaveRoom() {
+        if (confirm("現在のモードを終了して、最初の画面に戻りますか？\n（オンライン対戦の場合は部屋から退出します）")) {
+            // Firebaseから自分のオンライン状態を消去
+            if (roomId && myRole !== 'solo') {
+                db.ref(`rooms/${roomId}/players/${myRole}`).set(false);
+            }
+
+            // 変数を初期化
+            myRole = 'none';
+            roomId = null;
+            hostRole = null;
+            
+            // タイマーなどをストップ
+            applyTimerToggleLocal(false);
+
+            // URLの「?room=...」をリロードせずに綺麗に消去
+            window.history.pushState({}, document.title, window.location.pathname);
+
+            // 最初の画面をフワッと再表示
+            const selector = document.getElementById('role-selector');
+            selector.style.display = 'flex';
+            setTimeout(() => selector.style.opacity = '1', 10);
+
+            // 最初の画面のUIを初期状態に戻す
+            document.getElementById('invite-section').style.display = 'none';
+            document.querySelector('.role-card.solo').style.display = 'block';
+            document.getElementById('welcome-title').innerText = 'FEARLESS DRAFT';
+            
+            document.querySelectorAll('.role-card').forEach(c => {
+                c.classList.remove('selected', 'locked');
+                c.querySelector('h3').innerText = c.querySelector('h3').innerText.replace(' (TAKEN)', '');
+            });
+            
+            // オンラインバッジを非表示に戻す
+            document.getElementById('conn-p').style.display = 'none';
+            document.getElementById('conn-o').style.display = 'none';
+        }
+    }
+
     function setRole(role) {
         myRole = role;
         document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
@@ -441,6 +503,7 @@
         if (roomId) {
             roomRef = db.ref('rooms/' + roomId);
             setupFirebaseListener();
+            updatePresence(); // 🌟 入室を相手に知らせる
             finishSetup(role);
         } else {
             if (role === 'solo') {
@@ -454,7 +517,10 @@
                     hostRole: role, currentGame: 1, firstTeam: 'p',
                     names: { p: 'PURPLE', o: 'ORANGE' }, selections: [],
                     timerEnabled: false, timerPaused: false
+                }).then(() => {
+                    updatePresence(); // 🌟 部屋を作ったらすぐに入室状態にする
                 });
+                
                 setupFirebaseListener();
 
                 const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}&host=${role}`;
@@ -464,6 +530,15 @@
                 const otherTeam = role === 'p' ? 'o' : 'p';
                 document.querySelector(`.role-card.${otherTeam}`).classList.add('locked');
             }
+        }
+    }
+
+    // 🌟 自分のオンライン状態を書き込み、閉じた時に消えるようにする魔法
+    function updatePresence() {
+        if (roomId && myRole !== 'solo') {
+            const myStatusRef = db.ref(`rooms/${roomId}/players/${myRole}`);
+            myStatusRef.set(true); // 入室した！
+            myStatusRef.onDisconnect().set(false); // ブラウザを閉じたら「退出した」にする
         }
     }
 
@@ -490,6 +565,13 @@
         let displayStr = `MODE: ${labels[role]}`;
         if (roomId && role !== 'solo') displayStr += ` / ROOM: [${roomId}]`;
         document.getElementById('my-role-display').innerText = displayStr;
+        
+        // 🌟 ソロモード以外ならオンラインバッジを表示する
+        if (role !== 'solo') {
+            document.getElementById('conn-p').style.display = 'inline-block';
+            document.getElementById('conn-o').style.display = 'inline-block';
+        }
+        
         initGrid();
     }
 
@@ -497,6 +579,15 @@
         roomRef.on('value', snapshot => {
             const data = snapshot.val();
             if (!data) return;
+
+            // 🌟 相手（と自分）のオンライン状態を受け取ってバッジの色を変える
+            if (data.players) {
+                updateConnectionUI('p', data.players.p);
+                updateConnectionUI('o', data.players.o);
+            } else {
+                updateConnectionUI('p', false);
+                updateConnectionUI('o', false);
+            }
 
             if (data.resetEvent) {
                 if (lastResetTimestamp === null) {
@@ -530,11 +621,9 @@
                 if (no.innerText !== data.names.o && document.activeElement !== no) no.innerText = data.names.o;
             }
 
-            // 先攻後攻の同期と表示アップデート
             if (data.firstTeam && data.firstTeam !== firstTeam) {
                 firstTeam = data.firstTeam;
                 updateBadges();
-                // 🌟 追加：もし試合開始前なら、即座に光る枠も入れ替える
                 if (turnIndex === 0) initGrid();
             }
 
@@ -556,6 +645,19 @@
                 executeSelectionLocally(newSelections[turnIndex]);
             }
         });
+    }
+
+    // 🌟 バッジの見た目を切り替える関数
+    function updateConnectionUI(team, isOnline) {
+        const badge = document.getElementById(`conn-${team}`);
+        if (!badge) return;
+        if (isOnline) {
+            badge.className = 'conn-badge conn-online';
+            badge.innerText = '🟢 ONLINE';
+        } else {
+            badge.className = 'conn-badge conn-offline';
+            badge.innerText = '🔴 WAITING';
+        }
     }
 
     document.querySelectorAll('.editable-name').forEach(el => {
@@ -759,7 +861,6 @@
         }
     }
 
-    // 🌟 修正：ドラフト進行中の誤操作防止と、安全なリセット連動
     function toggleFirstPick() { 
         if (turnIndex > 0) {
             if (!confirm("ドラフトがすでに進行中です。\n先攻・後攻を入れ替えて、この試合を「最初からやり直し」ますか？")) {
@@ -774,7 +875,7 @@
                 firstTeam: nextFirst, 
                 selections: [], 
                 timerPaused: false,
-                resetEvent: { time: Date.now(), by: myRole, type: 'swap' } // スワップによるリセットを相手に通知
+                resetEvent: { time: Date.now(), by: myRole, type: 'swap' } 
             });
         } else { 
             firstTeam = nextFirst; 
