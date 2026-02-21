@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280">
-    <title>UNITE Fearless Draft - Pro Sync Edition</title>
+    <title>UNITE Fearless Draft - Slot Manage Edition</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -13,113 +13,107 @@
             --bg: #020205;
             --glass: rgba(20, 20, 30, 0.85);
             --ios-ease: cubic-bezier(0.4, 0, 0.2, 1);
-            --bounce-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
             --timer-gold: #ffd700;
             --text-main: #ffffff;
         }
 
-        @keyframes scene-in {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
             background-color: var(--bg);
-            margin: 0;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            color: var(--text-main);
-            min-width: 1250px;
-            width: 100%;
-            overflow-x: auto;
-            background-image: 
-                radial-gradient(circle at 15% 15%, rgba(161, 112, 255, 0.12) 0%, transparent 45%),
-                radial-gradient(circle at 85% 85%, rgba(255, 157, 82, 0.08) 0%, transparent 45%),
-                linear-gradient(180deg, #05050a 0%, #020205 100%);
-            animation: scene-in 0.8s var(--ios-ease) forwards;
+            margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center;
+            color: var(--text-main); min-width: 1250px; overflow-x: auto;
+            background-image: radial-gradient(circle at 15% 15%, rgba(161, 112, 255, 0.12) 0%, transparent 45%), linear-gradient(180deg, #05050a 0%, #020205 100%);
         }
 
+        /* ネットワークステータス・役割選択UI */
         .net-status {
             position: fixed; top: 10px; right: 10px; z-index: 1000;
-            background: rgba(0,0,0,0.85); padding: 12px 18px; border-radius: 20px;
+            background: rgba(0,0,0,0.9); padding: 15px; border-radius: 20px;
             font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px); color: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(15px); width: 220px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .net-status b { color: var(--timer-gold); }
-        .role-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-weight: 900; margin-left: 5px; font-size: 0.7rem; }
-        .role-p { background: var(--purple); color: #fff; }
-        .role-o { background: var(--orange); color: #fff; }
-        .role-s { background: #555; color: #fff; }
-        .create-btn { background: var(--purple); color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 8px; width: 100%; }
+        .slot-list { margin: 10px 0; border-top: 1px solid #333; padding-top: 10px; }
+        .slot-item { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
+        .role-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
+        .role-btn { 
+            padding: 6px; border-radius: 6px; border: none; cursor: pointer; 
+            font-size: 0.7rem; font-weight: bold; color: white; opacity: 0.5; transition: 0.3s;
+        }
+        .role-btn:not(:disabled):hover { opacity: 1; transform: translateY(-1px); }
+        .role-btn:disabled { cursor: not-allowed; background: #222 !important; color: #555; }
+        .role-btn.active { opacity: 1; ring: 2px solid white; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        
+        .btn-p { background: var(--purple); }
+        .btn-o { background: var(--orange); }
+        .btn-s { background: #555; grid-column: span 2; }
+        .create-btn { background: #fff; color: #000; width: 100%; border-radius: 8px; padding: 8px; margin-top: 10px; border: none; font-weight: 900; cursor: pointer; }
 
+        .role-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-weight: 900; margin-left: 5px; font-size: 0.7rem; }
+        .role-p { background: var(--purple); color: white; }
+        .role-o { background: var(--orange); color: white; }
+        .role-s { background: #555; color: white; }
+
+        /* メインUI */
         .header-section {
             width: 96%; max-width: 1200px; background: var(--glass); backdrop-filter: blur(25px);
             padding: 24px; border-radius: 30px; margin-bottom: 24px; text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
         .game-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
         .game-tabs button {
             padding: 10px 24px; border: none; border-radius: 12px; background: rgba(255,255,255,0.06); color: #888;
-            cursor: pointer; font-weight: 800; transition: all 0.3s;
+            cursor: pointer; font-weight: 800; transition: 0.3s;
         }
-        .game-tabs button.active { background: #fff; color: #000; box-shadow: 0 0 20px rgba(255,255,255,0.4); transform: scale(1.05); }
-
+        .game-tabs button.active { background: #fff; color: #000; transform: scale(1.05); }
         .admin-controls { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-        .swap-btn { padding: 10px 28px; border-radius: 50px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: 0.3s; }
-        .reset-btn { background: transparent; color: var(--ban-red); border: none; cursor: pointer; opacity: 0.6; font-size: 0.8rem; transition: 0.3s; }
-        .reset-btn:hover { opacity: 1; text-decoration: underline; }
-
+        .swap-btn { padding: 10px 28px; border-radius: 50px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; }
+        .reset-btn { background: transparent; color: var(--ban-red); border: none; cursor: pointer; opacity: 0.6; font-size: 0.8rem; }
         .timer-controls { display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); }
-        .stop-btn { background: #444; color: white; border: none; padding: 4px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem; transition: 0.2s; }
-        .stop-btn.paused { background: var(--timer-gold); color: #000; }
-
+        .stop-btn { background: #444; color: white; border: none; padding: 4px 15px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; }
         .status-container { margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 40px; }
-        .status-bar { font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; transition: 0.3s; }
-        .timer-display { font-size: 2.8rem; font-weight: 900; color: var(--timer-gold); min-width: 120px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+        .status-bar { font-size: 1.8rem; font-weight: 900; }
+        .timer-display { font-size: 2.8rem; font-weight: 900; color: var(--timer-gold); min-width: 120px; }
 
-        .main-layout { display: flex; width: 98%; max-width: 1600px; justify-content: center; gap: 24px; padding: 0 20px; box-sizing: border-box; }
+        .main-layout { display: flex; width: 98%; max-width: 1600px; justify-content: center; gap: 24px; }
         .side-panel { width: 340px; flex-shrink: 0; }
-        .team-box { background: var(--glass); border-radius: 35px; padding: 24px; border: 2px solid rgba(255,255,255,0.05); transition: all 0.5s; }
-        .team-purple.active-team { border-color: var(--purple); box-shadow: 0 0 20px rgba(161,112,255,0.2); }
-        .team-orange.active-team { border-color: var(--orange); box-shadow: 0 0 20px rgba(255,157,82,0.2); }
-
-        .editable-name { display: inline-block; cursor: text; padding: 2px 8px; border-radius: 8px; transition: 0.3s; outline: none; }
+        .team-box { background: var(--glass); border-radius: 35px; padding: 24px; border: 2px solid rgba(255,255,255,0.05); }
+        .team-purple.active-team { border-color: var(--purple); }
+        .team-orange.active-team { border-color: var(--orange); }
+        .editable-name { display: inline-block; cursor: text; padding: 2px 8px; border-radius: 8px; outline: none; }
         .ban-group { display: flex; gap: 10px; margin-bottom: 25px; }
         .ban-slot { flex: 1; aspect-ratio: 1/1; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         .ban-slot img { width: 100%; height: 100%; object-fit: cover; }
-        .ban-label { position: absolute; bottom: 0; width: 100%; background: var(--ban-red); color: white; font-size: 0.65rem; text-align: center; font-weight: 900; padding: 3px 0; z-index: 2; }
-
-        .pick-slot { height: 70px; background: rgba(255,255,255,0.04); margin: 12px 0; border-radius: 20px; display: flex; align-items: center; padding: 0 18px; font-weight: 800; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.05); }
+        .ban-label { position: absolute; bottom: 0; width: 100%; background: var(--ban-red); color: white; font-size: 0.65rem; text-align: center; padding: 3px 0; }
+        .pick-slot { height: 70px; background: rgba(255,255,255,0.04); margin: 12px 0; border-radius: 20px; display: flex; align-items: center; padding: 0 18px; font-weight: 800; border: 1px solid rgba(255,255,255,0.05); }
         .pick-slot img { width: 50px; height: 50px; margin-right: 15px; }
 
         .center-panel { flex: 1; min-width: 500px; }
         .pokemon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; background: rgba(0,0,0,0.25); padding: 20px; border-radius: 35px; height: 75vh; overflow-y: scroll; scrollbar-width: none; border: 1px solid rgba(255,255,255,0.05); }
-        .pokemon-grid::-webkit-scrollbar { display: none; }
-
-        .pokemon-card { background: rgba(255,255,255,0.08); border-radius: 18px; cursor: pointer; padding: 12px 8px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.2; }
+        .pokemon-card { background: rgba(255,255,255,0.08); border-radius: 18px; cursor: pointer; padding: 12px 8px; border: 1px solid rgba(255,255,255,0.1); position: relative; display: flex; flex-direction: column; align-items: center; aspect-ratio: 1 / 1.2; }
         .pokemon-card img { width: 80px; height: 80px; object-fit: contain; }
-        .pokemon-card .name { font-size: 0.75rem; font-weight: 900; color: #ffffff; margin-top: 8px; }
-
-        .status-overlay { position: absolute; inset: 0; display: flex; z-index: 10; pointer-events: none; border-radius: 18px; overflow: hidden; }
+        .pokemon-card .name { font-size: 0.75rem; font-weight: 900; margin-top: 8px; }
+        .status-overlay { position: absolute; inset: 0; display: flex; pointer-events: none; border-radius: 18px; overflow: hidden; }
         .status-p, .status-o { flex: 1; height: 100%; opacity: 0; transition: 0.3s; }
         .used-p-bg { background: rgba(161, 112, 255, 0.4); opacity: 1; }
         .used-o-bg { background: rgba(255, 157, 82, 0.4); opacity: 1; }
         .current-used { opacity: 0.1; filter: grayscale(1); pointer-events: none; }
         .active-turn-slot { border: 2px solid #fff !important; box-shadow: 0 0 15px #fff; background: rgba(255,255,255,0.2) !important; }
-
-        .footer-disclaimer { margin-top: 50px; padding: 20px; font-size: 0.5rem; color: rgba(255, 255, 255, 0.4); text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="net-status" id="net-info">
-    <div>接続: <span id="conn-status">オフライン</span> | 人数: <b id="peer-count">1</b>名</div>
-    <div>役割: <span id="my-role-display" class="role-badge">確認中</span></div>
+<div class="net-status">
+    <div id="conn-state">オフライン</div>
+    <div class="slot-list">
+        <div class="slot-item"><span>紫(ホスト)</span> <span id="count-p">0/1</span></div>
+        <div class="slot-item"><span>オレンジ</span> <span id="count-o">0/1</span></div>
+        <div class="slot-item"><span>観戦者</span> <span id="count-s">0</span></div>
+    </div>
+    <div class="role-btn-group">
+        <button id="btn-role-p" class="role-btn btn-p" onclick="selectRole('host')">紫として接続</button>
+        <button id="btn-role-o" class="role-btn btn-o" onclick="selectRole('guest')">橙として接続</button>
+        <button id="btn-role-s" class="role-btn btn-s" onclick="selectRole('spectator')">観戦者として接続</button>
+    </div>
     <button class="create-btn" id="btn-create" onclick="createRoom()">対戦URLを発行</button>
 </div>
 
@@ -131,7 +125,6 @@
         <button onclick="changeGame(4, true)" id="tab4">GAME 4</button>
         <button onclick="changeGame(5, true)" id="tab5">GAME 5</button>
     </div>
-    
     <div class="admin-controls">
         <div style="display: flex; gap: 20px; align-items: center;">
             <button class="swap-btn" onclick="toggleFirstPick(true)">⇄ 先攻切り替え</button>
@@ -145,7 +138,6 @@
         <button class="reset-btn" onclick="requestReset(false)">現在のGAMEをリセット</button>
         <button class="reset-btn" onclick="requestReset(true)" style="margin-top: -8px;">全試合をリセット</button>
     </div>
-
     <div class="status-container">
         <div class="status-bar" id="status-msg">READY</div>
         <div class="timer-display" id="timer">--</div>
@@ -183,7 +175,8 @@
     let usedP = new Set(), usedO = new Set(), currentRoundUsed = new Set();
     let turnIndex = 0, firstTeam = 'p', timeLeft = 0, timerInterval = null;
     let isPaused = false, currentGame = 1;
-    let peer = null, connections = [], hostConn = null, myRole = 'single';
+    let peer = null, connections = [], hostConn = null, myRole = 'spectator';
+    let roleCounts = { host: 0, guest: 0, spectator: 0 };
 
     function initNetwork() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -191,61 +184,101 @@
         peer = new Peer();
 
         peer.on('open', id => {
-            document.getElementById('conn-status').innerText = "オンライン";
-            if (roomId) connectToRoom(roomId);
-            else updateRoleDisplay('single');
+            document.getElementById('conn-state').innerText = "オンライン";
+            if (roomId) {
+                hostConn = peer.connect(roomId);
+                setupConn(hostConn);
+                document.getElementById('btn-create').style.display = 'none';
+            }
         });
 
         peer.on('connection', conn => {
-            if (myRole === 'single') updateRoleDisplay('host');
             connections.push(conn);
             setupConn(conn);
-            setTimeout(() => {
-                const role = (connections.length === 1) ? 'guest' : 'spectator';
-                conn.send({ type: 'assignRole', role: role });
-                broadcast({ type: 'peerCount', count: connections.length + 1 });
-                sendFullState(conn);
-            }, 800);
+            sendFullState(conn);
+            broadcastCounts();
         });
+
+        peer.on('error', () => alert("ホストが見つからないか、通信エラーです。"));
     }
 
     function createRoom() {
         const url = window.location.origin + window.location.pathname + '?room=' + peer.id;
         navigator.clipboard.writeText(url).then(() => {
-            alert("対戦用URLをコピーしました！相手に送ってください。\nあなたは【紫サイド(ホスト)】です。");
-            updateRoleDisplay('host');
+            alert("URLをコピーしました。相手に送ってください。\nあなたは自動的に【紫(ホスト)】になります。");
+            selectRole('host');
             document.getElementById('btn-create').style.display = 'none';
         });
     }
 
-    function connectToRoom(id) {
-        hostConn = peer.connect(id);
-        setupConn(hostConn);
-        document.getElementById('btn-create').style.display = 'none';
-    }
-
     function setupConn(c) {
         c.on('data', data => {
-            if (data.type === 'assignRole') updateRoleDisplay(data.role);
-            if (data.type === 'peerCount') document.getElementById('peer-count').innerText = data.count;
+            if (data.type === 'syncCounts') updateSlotUI(data.counts);
+            if (data.type === 'roleRequest') handleRoleRequest(c, data.role);
+            if (data.type === 'assignRole') { myRole = data.role; updateSlotUI(roleCounts); }
             if (data.type === 'action') handleSelect(data.name, false);
             if (data.type === 'sync') applyState(data.state);
-            if (data.type === 'game') changeGame(data.num, false);
-            if (data.type === 'swap') toggleFirstPick(false);
             if (data.type === 'timerToggle') { document.getElementById('timer-toggle').checked = data.checked; handleTimerToggle(false); }
             if (data.type === 'timerPause') { isPaused = data.paused; updateTimerDisplay(); }
-            if (data.type === 'names') { document.getElementById('name-p').innerText = data.p; document.getElementById('name-o').innerText = data.o; }
             if (data.type === 'resetReq') {
-                const msg = data.full ? "相手が【全試合リセット】を希望しています。同意しますか？" : "相手が【現在のGameのリセット】を希望しています。同意しますか？";
-                if (confirm(msg)) {
+                if (confirm("相手がリセットを希望しています。同意しますか？")) {
                     if (data.full) resetAll(true); else resetCurrentDraft(true);
                 }
             }
+            if (data.type === 'names') { document.getElementById('name-p').innerText = data.p; document.getElementById('name-o').innerText = data.o; }
         });
         c.on('close', () => {
+            if (c === hostConn) alert("ホストとの接続が切れました。再読み込みしてください。");
             connections = connections.filter(conn => conn !== c);
-            if (myRole === 'host') broadcast({ type: 'peerCount', count: connections.length + 1 });
+            broadcastCounts();
         });
+    }
+
+    function selectRole(role) {
+        if (role === 'host' && !hostConn) { // 自分が最初のホストになる場合
+            myRole = 'host';
+            broadcastCounts();
+            return;
+        }
+        if (hostConn) {
+            hostConn.send({ type: 'roleRequest', role: role });
+        }
+    }
+
+    function handleRoleRequest(conn, role) {
+        // 人数制限チェック
+        if (role === 'host' && connections.some(c => c.myAssignedRole === 'host')) return;
+        if (role === 'guest' && connections.some(c => c.myAssignedRole === 'guest')) return;
+        
+        conn.myAssignedRole = role;
+        conn.send({ type: 'assignRole', role: role });
+        broadcastCounts();
+    }
+
+    function broadcastCounts() {
+        roleCounts = { host: (myRole === 'host' ? 1 : 0), guest: (myRole === 'guest' ? 1 : 0), spectator: (myRole === 'spectator' ? 1 : 0) };
+        connections.forEach(c => {
+            if (c.myAssignedRole === 'host') roleCounts.host++;
+            if (c.myAssignedRole === 'guest') roleCounts.guest++;
+            if (c.myAssignedRole === 'spectator') roleCounts.spectator++;
+        });
+        const data = { type: 'syncCounts', counts: roleCounts };
+        updateSlotUI(roleCounts);
+        connections.forEach(c => { if(c.open) c.send(data); });
+    }
+
+    function updateSlotUI(counts) {
+        document.getElementById('count-p').innerText = `${counts.host}/1`;
+        document.getElementById('count-o').innerText = `${counts.guest}/1`;
+        document.getElementById('count-s').innerText = counts.spectator;
+
+        document.getElementById('btn-role-p').disabled = (counts.host >= 1 && myRole !== 'host');
+        document.getElementById('btn-role-o').disabled = (counts.guest >= 1 && myRole !== 'guest');
+        
+        document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+        if (myRole === 'host') document.getElementById('btn-role-p').classList.add('active');
+        if (myRole === 'guest') document.getElementById('btn-role-o').classList.add('active');
+        if (myRole === 'spectator') document.getElementById('btn-role-s').classList.add('active');
     }
 
     function broadcast(data) {
@@ -256,11 +289,105 @@
         }
     }
 
-    function updateRoleDisplay(role) {
-        myRole = role;
-        const el = document.getElementById('my-role-display');
-        el.innerText = role === 'host' ? '紫(ホスト)' : role === 'guest' ? 'オレンジ' : role === 'spectator' ? '観戦者' : '1人用';
-        el.className = 'role-badge ' + (role === 'host' ? 'role-p' : role === 'guest' ? 'role-o' : role === 'spectator' ? 'role-s' : '');
+    // --- ゲームロジック ---
+    function handleSelect(name, isLocal) {
+        const step = getSequence()[turnIndex];
+        if (!step || currentRoundUsed.has(name)) return;
+        if (isLocal) {
+            if (myRole === 'spectator') return;
+            if (myRole === 'host' && step.t !== 'p') return;
+            if (myRole === 'guest' && step.t !== 'o') return;
+        }
+        if (step.m === 'P' && ((step.t === 'p' && usedP.has(name)) || (step.t === 'o' && usedO.has(name)))) return;
+
+        if (step.m === 'B') {
+            document.querySelectorAll('.ban-group')[step.t === 'p' ? 0 : 1].children[step.i].innerHTML = `<img src="img/${name}.png"><div class="ban-label">${name}</div>`;
+        } else {
+            const slot = document.getElementById(`${step.t}-pick-${step.i}`);
+            slot.innerHTML = `<img src="img/${name}.png"> <span>${name}</span>`;
+            slot.dataset.pokemon = name;
+        }
+        currentRoundUsed.add(name);
+        turnIndex++;
+        if (isLocal) broadcast({ type: 'action', name: name });
+        initGrid();
+    }
+
+    function handleTimerToggle(isLocal) {
+        const checked = document.getElementById('timer-toggle').checked;
+        document.getElementById('timer-stop-btn').disabled = !checked;
+        if (!checked) { clearInterval(timerInterval); document.getElementById('timer').innerText = "--"; }
+        else { highlightTurn(); }
+        if (isLocal) broadcast({ type: 'timerToggle', checked: checked });
+    }
+
+    function toggleTimerPause(isLocal) {
+        isPaused = !isPaused; updateTimerDisplay();
+        if (isLocal) broadcast({ type: 'timerPause', paused: isPaused });
+    }
+
+    function startTimer(sec) {
+        clearInterval(timerInterval);
+        if (!document.getElementById('timer-toggle').checked || sec === 0) return;
+        timeLeft = sec; isPaused = false; updateTimerDisplay();
+        timerInterval = setInterval(() => {
+            if (!isPaused) { timeLeft--; updateTimerDisplay(); if (timeLeft <= 0) clearInterval(timerInterval); }
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        document.getElementById('timer').innerText = timeLeft;
+        document.getElementById('timer-stop-btn').innerText = isPaused ? "再開" : "ストップ";
+    }
+
+    function highlightTurn() {
+        document.querySelectorAll('.pick-slot, .ban-slot, .team-box').forEach(s => s.classList.remove('active-turn-slot', 'active-team'));
+        const step = getSequence()[turnIndex];
+        if (step) {
+            document.getElementById(`panel-${step.t}`).classList.add('active-team');
+            const slot = step.m === 'B' ? document.querySelectorAll('.ban-group')[step.t === 'p' ? 0 : 1].children[step.i] : document.getElementById(`${step.t}-pick-${step.i}`);
+            slot.classList.add('active-turn-slot');
+            document.getElementById('status-msg').innerText = (step.t === 'p' ? 'PURPLE' : 'ORANGE') + (step.m === 'B' ? ' BANNING' : ' PICKING');
+            startTimer(step.time);
+        } else {
+            document.getElementById('status-msg').innerText = "COMPLETE";
+            clearInterval(timerInterval); document.getElementById('timer').innerText = "--";
+        }
+    }
+
+    function requestReset(isFull) {
+        if (confirm("リセットの同意確認を送ります。")) broadcast({ type: 'resetReq', full: isFull });
+    }
+
+    function resetCurrentDraft(shouldBroadcast) {
+        turnIndex = 0; currentRoundUsed.clear(); isPaused = false;
+        document.querySelectorAll('.pick-slot').forEach((s, i) => { s.innerHTML = `Pick ${i+1}`; s.classList.remove('active-turn-slot'); delete s.dataset.pokemon; });
+        document.querySelectorAll('.ban-slot').forEach(s => s.innerHTML = "");
+        initGrid();
+        if (shouldBroadcast) broadcast({ type: 'sync', state: getFullStateData() });
+    }
+
+    function resetAll(shouldBroadcast) {
+        usedP.clear(); usedO.clear(); currentGame = 1;
+        document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab1`).classList.add('active');
+        resetCurrentDraft(shouldBroadcast);
+    }
+
+    function changeGame(num, isLocal) {
+        document.querySelectorAll('#picks-purple .pick-slot').forEach(s => { if(s.dataset.pokemon) usedP.add(s.dataset.pokemon); });
+        document.querySelectorAll('#picks-orange .pick-slot').forEach(s => { if(s.dataset.pokemon) usedO.add(s.dataset.pokemon); });
+        currentGame = num;
+        document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab${num}`).classList.add('active');
+        resetCurrentDraft(isLocal);
+    }
+
+    function toggleFirstPick(isLocal) {
+        firstTeam = (firstTeam === 'p' ? 'o' : 'p');
+        document.getElementById('badge-p').innerText = firstTeam === 'p' ? '先攻' : '後攻';
+        document.getElementById('badge-o').innerText = firstTeam === 'o' ? '先攻' : '後攻';
+        resetCurrentDraft(isLocal);
     }
 
     function getSequence() {
@@ -290,114 +417,6 @@
         highlightTurn();
     }
 
-    function handleSelect(name, isLocal) {
-        const step = getSequence()[turnIndex];
-        if (!step || currentRoundUsed.has(name)) return;
-        if (isLocal && myRole !== 'single') {
-            if (myRole === 'spectator') return;
-            if (myRole === 'host' && step.t !== 'p') return;
-            if (myRole === 'guest' && step.t !== 'o') return;
-        }
-        if (step.m === 'P' && ((step.t === 'p' && usedP.has(name)) || (step.t === 'o' && usedO.has(name)))) return;
-
-        if (step.m === 'B') {
-            document.querySelectorAll('.ban-group')[step.t === 'p' ? 0 : 1].children[step.i].innerHTML = `<img src="img/${name}.png"><div class="ban-label">${name}</div>`;
-        } else {
-            const slot = document.getElementById(`${step.t}-pick-${step.i}`);
-            slot.innerHTML = `<img src="img/${name}.png"> <span>${name}</span>`;
-            slot.dataset.pokemon = name;
-        }
-        currentRoundUsed.add(name);
-        turnIndex++;
-        if (isLocal) broadcast({ type: 'action', name: name });
-        initGrid();
-    }
-
-    function startTimer(sec) {
-        clearInterval(timerInterval);
-        if (!document.getElementById('timer-toggle').checked || sec === 0) return;
-        timeLeft = sec; isPaused = false; updateTimerDisplay();
-        timerInterval = setInterval(() => {
-            if (!isPaused) { timeLeft--; updateTimerDisplay(); if (timeLeft <= 0) { clearInterval(timerInterval); } }
-        }, 1000);
-    }
-
-    function updateTimerDisplay() {
-        document.getElementById('timer').innerText = timeLeft;
-        document.getElementById('timer-stop-btn').innerText = isPaused ? "再開" : "ストップ";
-        document.getElementById('timer-stop-btn').className = "stop-btn" + (isPaused ? " paused" : "");
-    }
-
-    function handleTimerToggle(isLocal) {
-        const checked = document.getElementById('timer-toggle').checked;
-        document.getElementById('timer-stop-btn').disabled = !checked;
-        if (!checked) { clearInterval(timerInterval); document.getElementById('timer').innerText = "--"; }
-        else { highlightTurn(); }
-        if (isLocal) broadcast({ type: 'timerToggle', checked: checked });
-    }
-
-    function toggleTimerPause(isLocal) {
-        isPaused = !isPaused; updateTimerDisplay();
-        if (isLocal) broadcast({ type: 'timerPause', paused: isPaused });
-    }
-
-    function highlightTurn() {
-        document.querySelectorAll('.pick-slot, .ban-slot, .team-box').forEach(s => s.classList.remove('active-turn-slot', 'active-team'));
-        const step = getSequence()[turnIndex];
-        const statusMsg = document.getElementById('status-msg');
-        if (step) {
-            document.getElementById(`panel-${step.t}`).classList.add('active-team');
-            const slot = step.m === 'B' ? document.querySelectorAll('.ban-group')[step.t === 'p' ? 0 : 1].children[step.i] : document.getElementById(`${step.t}-pick-${step.i}`);
-            slot.classList.add('active-turn-slot');
-            statusMsg.innerText = (step.t === 'p' ? 'PURPLE' : 'ORANGE') + (step.m === 'B' ? ' BANNING' : ' PICKING');
-            statusMsg.style.color = step.t === 'p' ? 'var(--purple)' : 'var(--orange)';
-            startTimer(step.time);
-        } else {
-            statusMsg.innerText = "COMPLETE"; statusMsg.style.color = "#fff";
-            clearInterval(timerInterval); document.getElementById('timer').innerText = "--";
-        }
-    }
-
-    function requestReset(isFull) {
-        if (myRole === 'single') { if (isFull) resetAll(false); else resetCurrentDraft(false); return; }
-        if (confirm("相手にリセットの同意確認を送ります。よろしいですか？")) {
-            broadcast({ type: 'resetReq', full: isFull });
-        }
-    }
-
-    function resetCurrentDraft(shouldBroadcast) {
-        turnIndex = 0; currentRoundUsed.clear(); isPaused = false;
-        document.querySelectorAll('.pick-slot').forEach((s, i) => { s.innerHTML = `Pick ${i+1}`; s.classList.remove('active-turn-slot'); delete s.dataset.pokemon; });
-        document.querySelectorAll('.ban-slot').forEach(s => { s.innerHTML = ""; s.classList.remove('active-turn-slot'); });
-        initGrid();
-        if (shouldBroadcast) broadcast({ type: 'sync', state: getFullStateData() });
-    }
-
-    function resetAll(shouldBroadcast) {
-        usedP.clear(); usedO.clear(); currentGame = 1;
-        document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
-        document.getElementById(`tab1`).classList.add('active');
-        resetCurrentDraft(shouldBroadcast);
-    }
-
-    function changeGame(num, isLocal) {
-        document.querySelectorAll('#picks-purple .pick-slot').forEach(s => { if(s.dataset.pokemon) usedP.add(s.dataset.pokemon); });
-        document.querySelectorAll('#picks-orange .pick-slot').forEach(s => { if(s.dataset.pokemon) usedO.add(s.dataset.pokemon); });
-        currentGame = num;
-        document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
-        document.getElementById(`tab${num}`).classList.add('active');
-        resetCurrentDraft(isLocal);
-    }
-
-    function toggleFirstPick(isLocal) {
-        firstTeam = (firstTeam === 'p' ? 'o' : 'p');
-        const bp = document.getElementById('badge-p'), bo = document.getElementById('badge-o');
-        bp.innerText = firstTeam === 'p' ? '先攻' : '後攻';
-        bo.innerText = firstTeam === 'o' ? '先攻' : '後攻';
-        resetCurrentDraft(isLocal);
-        if (isLocal) broadcast({ type: 'swap' });
-    }
-
     function sendFullState(c) {
         if(c.open) c.send({ type: 'sync', state: getFullStateData() });
     }
@@ -406,8 +425,7 @@
         return {
             usedP: Array.from(usedP), usedO: Array.from(usedO), currentRoundUsed: Array.from(currentRoundUsed),
             turnIndex, firstTeam, currentGame,
-            nameP: document.getElementById('name-p').innerText,
-            nameO: document.getElementById('name-o').innerText
+            nameP: document.getElementById('name-p').innerText, nameO: document.getElementById('name-o').innerText
         };
     }
 
@@ -416,11 +434,6 @@
         turnIndex = s.turnIndex; firstTeam = s.firstTeam; currentGame = s.currentGame;
         document.getElementById('name-p').innerText = s.nameP;
         document.getElementById('name-o').innerText = s.nameO;
-        document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
-        document.getElementById(`tab${currentGame}`).classList.add('active');
-        const bp = document.getElementById('badge-p'), bo = document.getElementById('badge-o');
-        bp.innerText = firstTeam === 'p' ? '先攻' : '後攻';
-        bo.innerText = firstTeam === 'o' ? '先攻' : '後攻';
         resetCurrentDraft(false);
     }
 
