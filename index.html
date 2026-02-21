@@ -138,7 +138,6 @@
         .stop-btn:hover:not(:disabled) { background: #666; }
         .stop-btn.paused { background: var(--timer-gold); color: #000; }
 
-        /* --- 🌟 退出ボタンのCSS --- */
         .leave-btn {
             background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 4px 15px; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 0.75rem;
@@ -200,10 +199,11 @@
         .order-badge { font-size: 0.9rem; padding: 4px 12px; border-radius: 50px; background: rgba(255,255,255,0.1); vertical-align: middle; margin-left: 8px; }
         .order-1st { background: #fff; color: #000; box-shadow: 0 0 10px #fff; }
 
-        /* --- 🌟 オンライン表示バッジのCSS --- */
+        /* 🌟 オンライン表示バッジのCSS */
         .conn-badge {
             font-size: 0.65rem; padding: 4px 10px; border-radius: 50px; margin-left: 10px;
             font-weight: 900; transition: 0.4s var(--bounce-ease); display: none; vertical-align: middle;
+            white-space: nowrap;
         }
         .conn-online { background: rgba(76, 175, 80, 0.15); color: #4CAF50; border: 1px solid #4CAF50; box-shadow: 0 0 12px rgba(76, 175, 80, 0.4); }
         .conn-offline { background: rgba(255, 71, 71, 0.1); color: var(--ban-red); border: 1px solid var(--ban-red); opacity: 0.6; }
@@ -371,7 +371,7 @@
             <h2>
                 <span class="editable-name" contenteditable="true" spellcheck="false" id="name-p">PURPLE</span>
                 <span id="badge-p" class="order-badge">先攻</span>
-                <span id="conn-p" class="conn-badge conn-offline">🔴 WAITING</span>
+                <span id="conn-p" class="conn-badge conn-offline">🔴 OFFLINE</span>
             </h2>
             <div class="ban-group">
                 <div class="ban-slot" id="p-ban-0"></div>
@@ -395,7 +395,7 @@
             <h2>
                 <span class="editable-name" contenteditable="true" spellcheck="false" id="name-o">ORANGE</span>
                 <span id="badge-o" class="order-badge">後攻</span>
-                <span id="conn-o" class="conn-badge conn-offline">🔴 WAITING</span>
+                <span id="conn-o" class="conn-badge conn-offline">🔴 OFFLINE</span>
             </h2>
             <div class="ban-group">
                 <div class="ban-slot" id="o-ban-0"></div>
@@ -453,31 +453,24 @@
         }
     });
 
-    // 🌟 退出・モード変更ボタンの処理
     function leaveRoom() {
         if (confirm("現在のモードを終了して、最初の画面に戻りますか？\n（オンライン対戦の場合は部屋から退出します）")) {
-            // Firebaseから自分のオンライン状態を消去
             if (roomId && myRole !== 'solo') {
                 db.ref(`rooms/${roomId}/players/${myRole}`).set(false);
             }
 
-            // 変数を初期化
             myRole = 'none';
             roomId = null;
             hostRole = null;
-            
-            // タイマーなどをストップ
             applyTimerToggleLocal(false);
 
-            // URLの「?room=...」をリロードせずに綺麗に消去
+            // 🌟 リロードせずにURLを綺麗にする
             window.history.pushState({}, document.title, window.location.pathname);
 
-            // 最初の画面をフワッと再表示
             const selector = document.getElementById('role-selector');
             selector.style.display = 'flex';
             setTimeout(() => selector.style.opacity = '1', 10);
 
-            // 最初の画面のUIを初期状態に戻す
             document.getElementById('invite-section').style.display = 'none';
             document.querySelector('.role-card.solo').style.display = 'block';
             document.getElementById('welcome-title').innerText = 'FEARLESS DRAFT';
@@ -487,7 +480,6 @@
                 c.querySelector('h3').innerText = c.querySelector('h3').innerText.replace(' (TAKEN)', '');
             });
             
-            // オンラインバッジを非表示に戻す
             document.getElementById('conn-p').style.display = 'none';
             document.getElementById('conn-o').style.display = 'none';
         }
@@ -502,8 +494,13 @@
 
         if (roomId) {
             roomRef = db.ref('rooms/' + roomId);
+            
+            // 🌟 ゲストのオンライン状態を確実にセット
+            const myStatusRef = db.ref(`rooms/${roomId}/players/${myRole}`);
+            myStatusRef.set(true);
+            myStatusRef.onDisconnect().set(false);
+            
             setupFirebaseListener();
-            updatePresence(); // 🌟 入室を相手に知らせる
             finishSetup(role);
         } else {
             if (role === 'solo') {
@@ -513,12 +510,18 @@
                 hostRole = role;
                 roomRef = db.ref('rooms/' + roomId);
 
+                // 🌟 ホスト作成時に、最初から自分を「オンライン」としてデータベースに書き込む
                 roomRef.set({
                     hostRole: role, currentGame: 1, firstTeam: 'p',
                     names: { p: 'PURPLE', o: 'ORANGE' }, selections: [],
-                    timerEnabled: false, timerPaused: false
+                    timerEnabled: false, timerPaused: false,
+                    players: {
+                        p: role === 'p',
+                        o: role === 'o'
+                    }
                 }).then(() => {
-                    updatePresence(); // 🌟 部屋を作ったらすぐに入室状態にする
+                    const myStatusRef = db.ref(`rooms/${roomId}/players/${myRole}`);
+                    myStatusRef.onDisconnect().set(false);
                 });
                 
                 setupFirebaseListener();
@@ -530,15 +533,6 @@
                 const otherTeam = role === 'p' ? 'o' : 'p';
                 document.querySelector(`.role-card.${otherTeam}`).classList.add('locked');
             }
-        }
-    }
-
-    // 🌟 自分のオンライン状態を書き込み、閉じた時に消えるようにする魔法
-    function updatePresence() {
-        if (roomId && myRole !== 'solo') {
-            const myStatusRef = db.ref(`rooms/${roomId}/players/${myRole}`);
-            myStatusRef.set(true); // 入室した！
-            myStatusRef.onDisconnect().set(false); // ブラウザを閉じたら「退出した」にする
         }
     }
 
@@ -566,7 +560,6 @@
         if (roomId && role !== 'solo') displayStr += ` / ROOM: [${roomId}]`;
         document.getElementById('my-role-display').innerText = displayStr;
         
-        // 🌟 ソロモード以外ならオンラインバッジを表示する
         if (role !== 'solo') {
             document.getElementById('conn-p').style.display = 'inline-block';
             document.getElementById('conn-o').style.display = 'inline-block';
@@ -580,7 +573,7 @@
             const data = snapshot.val();
             if (!data) return;
 
-            // 🌟 相手（と自分）のオンライン状態を受け取ってバッジの色を変える
+            // 🌟 相手のオンライン状態を受け取ってバッジの見た目を変える
             if (data.players) {
                 updateConnectionUI('p', data.players.p);
                 updateConnectionUI('o', data.players.o);
@@ -647,7 +640,7 @@
         });
     }
 
-    // 🌟 バッジの見た目を切り替える関数
+    // 🌟 OFFLINE表記の適用関数
     function updateConnectionUI(team, isOnline) {
         const badge = document.getElementById(`conn-${team}`);
         if (!badge) return;
@@ -656,7 +649,7 @@
             badge.innerText = '🟢 ONLINE';
         } else {
             badge.className = 'conn-badge conn-offline';
-            badge.innerText = '🔴 WAITING';
+            badge.innerText = '🔴 OFFLINE';
         }
     }
 
