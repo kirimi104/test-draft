@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280">
     <title>UNITE Fearless Draft</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --purple: #a170ff;
@@ -17,6 +21,7 @@
             --text-main: #ffffff;
         }
 
+        /* 全体フェードイン */
         @keyframes scene-in {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -25,8 +30,19 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
             background-color: var(--bg);
-            margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; color: var(--text-main); min-width: 1250px; width: 100%; overflow-x: auto;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-main);
+            
+            /* スマホで横並びを維持するために最小幅のみ設定し、幅自体は100%に */
+            min-width: 1250px;
+            width: 100%;
+            overflow-x: auto;
+
             background-image: 
                 radial-gradient(circle at 15% 15%, rgba(161, 112, 255, 0.12) 0%, transparent 45%),
                 radial-gradient(circle at 85% 85%, rgba(255, 157, 82, 0.08) 0%, transparent 45%),
@@ -34,7 +50,6 @@
             animation: scene-in 0.8s var(--ios-ease) forwards;
         }
 
-        /* --- 役割選択オーバーレイ --- */
         #role-selector {
             position: fixed; inset: 0; background: rgba(0, 0, 0, 0.92);
             backdrop-filter: blur(25px); z-index: 9999; display: flex; flex-direction: column;
@@ -56,108 +71,220 @@
         .role-card.selected { background: rgba(255,255,255,0.15); border-color: #fff; transform: translateY(-12px); box-shadow: 0 15px 30px rgba(0,0,0,0.5); }
         .role-card.locked { filter: grayscale(1) opacity(0.2); pointer-events: none; transform: none !important; border-color: transparent !important; }
 
-        /* --- 招待リンクのUI --- */
         .invite-container {
             margin-top: 40px; padding: 25px 40px; background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.2); border-radius: 20px;
             display: none; flex-direction: column; align-items: center;
-            animation: scene-in 0.6s var(--bounce-ease) forwards;
-            backdrop-filter: blur(10px);
+            animation: scene-in 0.6s var(--bounce-ease) forwards; backdrop-filter: blur(10px);
         }
         .invite-box { display: flex; gap: 10px; margin-top: 15px; margin-bottom: 20px; }
-        .invite-input {
-            background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2);
-            color: #fff; padding: 12px 15px; border-radius: 12px; width: 340px;
-            font-family: monospace; font-size: 0.9rem; outline: none; text-align: center;
-        }
-        .copy-btn {
-            background: var(--purple); color: white; border: none; padding: 0 20px;
-            border-radius: 12px; cursor: pointer; font-weight: 800; transition: 0.3s var(--bounce-ease);
-        }
+        .invite-input { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px 15px; border-radius: 12px; width: 340px; font-family: monospace; font-size: 0.9rem; outline: none; text-align: center; }
+        .copy-btn { background: var(--purple); color: white; border: none; padding: 0 20px; border-radius: 12px; cursor: pointer; font-weight: 800; transition: 0.3s var(--bounce-ease); }
         .copy-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(161,112,255,0.5); }
-        .start-btn {
-            background: #fff; color: #000; border: none; padding: 12px 35px;
-            border-radius: 50px; cursor: pointer; font-weight: 900; font-size: 1rem;
-            transition: 0.3s var(--bounce-ease); box-shadow: 0 0 15px rgba(255,255,255,0.2);
-        }
+        .start-btn { background: #fff; color: #000; border: none; padding: 12px 35px; border-radius: 50px; cursor: pointer; font-weight: 900; font-size: 1rem; transition: 0.3s var(--bounce-ease); box-shadow: 0 0 15px rgba(255,255,255,0.2); }
         .start-btn:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(255,255,255,0.6); }
 
         .pokemon-card.readonly { cursor: not-allowed; filter: grayscale(0.9) opacity(0.3); transform: none !important; pointer-events: none; }
 
         .header-section {
-            width: 96%; max-width: 1200px; background: var(--glass);
-            backdrop-filter: blur(25px); padding: 24px; border-radius: 30px;
-            margin-bottom: 24px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 96%;
+            max-width: 1200px;
+            background: var(--glass);
+            backdrop-filter: blur(25px);
+            padding: 24px;
+            border-radius: 30px;
+            margin-bottom: 24px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
+
         .game-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
         .game-tabs button {
             padding: 10px 24px; border: none; border-radius: 12px;
             background: rgba(255,255,255,0.06); color: #888;
             cursor: pointer; font-weight: 800; transition: all 0.3s var(--ios-ease);
         }
-        .game-tabs button.active { background: #fff; color: #000; box-shadow: 0 0 20px rgba(255,255,255,0.4); transform: scale(1.05); }
+        .game-tabs button:hover { transform: translateY(-2px); background: rgba(255,255,255,0.1); }
+        .game-tabs button.active { 
+            background: #fff; color: #000; 
+            box-shadow: 0 0 20px rgba(255,255,255,0.4);
+            transform: scale(1.05);
+        }
 
         .admin-controls { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-        .swap-btn { padding: 10px 28px; border-radius: 50px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: 0.3s; }
+        .swap-btn { 
+            padding: 10px 28px; border-radius: 50px; background: rgba(255,255,255,0.08); 
+            color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
+            transition: 0.3s;
+        }
+        .swap-btn:active { transform: scale(0.95); }
+        
         .reset-btn { background: transparent; color: var(--ban-red); border: none; cursor: pointer; opacity: 0.6; font-size: 0.8rem; transition: 0.3s; }
-        .reset-btn:hover { opacity: 1; text-shadow: 0 0 10px rgba(255,71,71,0.5); }
-        .reset-current { color: #bbb; } /* 現在の試合リセット用の落ち着いた色 */
-        .reset-current:hover { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .reset-btn:hover { opacity: 1; text-decoration: underline; }
+        .reset-current { color: #bbb; }
+        .reset-current:hover { color: #fff; }
 
-        .timer-controls { display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); }
-        .stop-btn { background: #444; color: white; border: none; padding: 4px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
+        .timer-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.05);
+            padding: 8px 20px;
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stop-btn {
+            background: #444; color: white; border: none; padding: 4px 15px; 
+            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem;
+            transition: 0.2s;
+        }
+        .stop-btn:hover:not(:disabled) { background: #666; }
         .stop-btn.paused { background: var(--timer-gold); color: #000; }
 
         .status-container { margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 40px; }
         .status-bar { font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; transition: 0.3s; }
-        .timer-display { font-size: 2.8rem; font-weight: 900; color: var(--timer-gold); min-width: 120px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
-        @keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-        .timer-urgent { animation: heartbeat 1s infinite; color: var(--ban-red) !important; }
+        
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            15% { transform: scale(1.1); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        @keyframes blink-red {
+            0%, 100% { color: var(--ban-red); opacity: 1; }
+            50% { color: #fff; opacity: 0.5; }
+        }
 
-        .main-layout { display: flex; width: 98%; max-width: 1600px; justify-content: center; gap: 24px; padding: 0 20px; box-sizing: border-box; }
+        .timer-display { 
+            font-size: 2.8rem; font-weight: 900; color: var(--timer-gold); 
+            min-width: 120px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+            transition: color 0.3s;
+        }
+        .timer-urgent { animation: heartbeat 1s infinite; color: var(--ban-red) !important; }
+        .timer-timeout { animation: blink-red 0.5s infinite; color: var(--ban-red) !important; font-size: 2rem; }
+
+        .main-layout { 
+            display: flex; 
+            width: 98%; 
+            max-width: 1600px;
+            justify-content: center; 
+            gap: 24px; 
+            padding: 0 20px; 
+            box-sizing: border-box; 
+        }
         .side-panel { width: 340px; flex-shrink: 0; }
         
-        /* 修正: 中央パネルが横に伸びないようにする魔法のコード */
-        .center-panel { flex: 1; min-width: 0; }
+        @keyframes pulse-p { 0%, 100% { box-shadow: 0 0 10px rgba(161,112,255,0.1); } 50% { box-shadow: 0 0 30px rgba(161,112,255,0.4); } }
+        @keyframes pulse-o { 0%, 100% { box-shadow: 0 0 10px rgba(255,157,82,0.1); } 50% { box-shadow: 0 0 30px rgba(255,157,82,0.4); } }
 
-        .team-box { background: var(--glass); border-radius: 35px; padding: 24px; border: 2px solid rgba(255,255,255,0.05); transition: all 0.5s var(--ios-ease); }
-        .team-purple.active-team { border-color: var(--purple); box-shadow: 0 0 30px rgba(161,112,255,0.2); }
-        .team-orange.active-team { border-color: var(--orange); box-shadow: 0 0 30px rgba(255,157,82,0.2); }
+        .team-box { 
+            background: var(--glass); border-radius: 35px; padding: 24px; 
+            border: 2px solid rgba(255,255,255,0.05); transition: all 0.5s var(--ios-ease); 
+        }
+        .team-purple.active-team { border-color: var(--purple); animation: pulse-p 2s infinite; }
+        .team-orange.active-team { border-color: var(--orange); animation: pulse-o 2s infinite; }
 
-        .editable-name { display: inline-block; cursor: text; padding: 2px 8px; border-radius: 8px; transition: 0.3s var(--bounce-ease); border: 1px solid transparent; outline: none; }
+        .editable-name {
+            display: inline-block; cursor: text; padding: 2px 8px; border-radius: 8px;
+            transition: 0.3s var(--bounce-ease); border: 1px solid transparent; outline: none;
+        }
+        .editable-name:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
+        .editable-name:focus { background: rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.3); transform: scale(1.02); }
+
         .order-badge { font-size: 0.9rem; padding: 4px 12px; border-radius: 50px; background: rgba(255,255,255,0.1); vertical-align: middle; margin-left: 8px; }
         .order-1st { background: #fff; color: #000; box-shadow: 0 0 10px #fff; }
 
         .ban-group { display: flex; gap: 10px; margin-bottom: 25px; }
-        .ban-slot { flex: 1; aspect-ratio: 1/1; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .ban-slot { 
+            flex: 1; aspect-ratio: 1/1; background: rgba(0,0,0,0.6); 
+            border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); 
+            position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
+        }
+        .ban-slot img { width: 75%; height: 75%; object-fit: contain; margin-bottom: 12px; animation: slot-pop 0.4s var(--bounce-ease); }
         .ban-label { position: absolute; bottom: 0; width: 100%; background: var(--ban-red); color: white; font-size: 0.65rem; text-align: center; font-weight: 900; padding: 3px 0; z-index: 2; }
 
-        .pick-slot { height: 70px; background: rgba(255,255,255,0.04); margin: 12px 0; border-radius: 20px; display: flex; align-items: center; padding: 0 18px; font-weight: 800; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
+        .ban-none {
+            width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: linear-gradient(45deg, rgba(255,71,71,0.1), rgba(0,0,0,0.6));
+            color: rgba(255,255,255,0.4); font-size: 1.8rem; font-weight: 900; position: relative;
+        }
+        .ban-none::after {
+            content: ""; position: absolute; width: 140%; height: 2px; background: var(--ban-red); transform: rotate(-45deg); opacity: 0.6;
+        }
+        .ban-none-text { font-size: 0.6rem; color: var(--ban-red); margin-top: 5px; letter-spacing: 1px; }
+
+        .pick-slot { 
+            height: 70px; background: rgba(255,255,255,0.04); margin: 12px 0; 
+            border-radius: 20px; display: flex; align-items: center; padding: 0 18px; 
+            font-weight: 800; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s var(--ios-ease);
+        }
         .pick-slot.filled { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); animation: slot-pop 0.4s var(--bounce-ease); }
         .pick-slot img { width: 50px; height: 50px; margin-right: 15px; object-fit: contain; }
 
-        /* 修正: MacやiPhoneでのスクロール挙動を美しくする auto */
-        .pokemon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; background: rgba(0,0,0,0.25); padding: 20px; border-radius: 35px; height: 75vh; overflow-y: auto; scrollbar-width: none; border: 1px solid rgba(255,255,255,0.05); }
+        .center-panel { flex: 1; min-width: 500px; max-width: 850px; width: 100%; }
+        
+        .pokemon-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+            gap: 12px; background: rgba(0,0,0,0.25); padding: 20px; border-radius: 35px; 
+            height: 75vh; overflow-y: scroll; scrollbar-width: none; border: 1px solid rgba(255,255,255,0.05);
+        }
         .pokemon-grid::-webkit-scrollbar { display: none; }
 
-        .pokemon-card { background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%); border-radius: 18px; cursor: pointer; padding: 12px 8px; border: 1px solid rgba(255,255,255,0.1); transition: 0.4s var(--bounce-ease); position: relative; display: flex; flex-direction: column; align-items: center; aspect-ratio: 1 / 1.2; }
+        .pokemon-card { 
+            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+            border-radius: 18px; cursor: pointer; padding: 12px 8px; border: 1px solid rgba(255,255,255,0.1); 
+            transition: transform 0.4s var(--bounce-ease), background 0.3s, border-color 0.3s; 
+            position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.2;
+        }
         .pokemon-card:hover { transform: scale(1.08) translateY(-5px); background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); z-index: 5; }
-        .img-box { width: 80px; height: 80px; display: flex; justify-content: center; align-items: center; }
+
+        .img-box { width: 80px; height: 80px; display: flex; justify-content: center; align-items: center; transition: 0.3s; }
         .img-box img { width: 100%; height: 100%; object-fit: contain; }
-        .pokemon-card .name { font-size: 0.75rem; font-weight: 900; color: #ffffff; margin-top: 8px; text-align: center; }
+
+        .pokemon-card .name { font-size: 0.75rem; font-weight: 900; color: #ffffff; margin-top: 8px; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .status-overlay { position: absolute; inset: 0; display: flex; z-index: 10; pointer-events: none; border-radius: 18px; overflow: hidden; }
-        .status-p, .status-o { flex: 1; height: 100%; opacity: 0; transition: 0.4s; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 10px; }
-        .used-p-bg { background: rgba(161, 112, 255, 0.3); backdrop-filter: grayscale(1) brightness(0.4) blur(2px); opacity: 1; }
-        .used-o-bg { background: rgba(255, 157, 82, 0.3); backdrop-filter: grayscale(1) brightness(0.4) blur(2px); opacity: 1; }
+        .status-p, .status-o { flex: 1; height: 100%; transition: 0.4s var(--ios-ease); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 10px; opacity: 0; }
+        .status-p.used-p-bg, .status-o.used-o-bg { opacity: 1; }
+        .used-p-bg { background: rgba(161, 112, 255, 0.3); backdrop-filter: grayscale(1) brightness(0.4) blur(2px); }
+        .used-o-bg { background: rgba(255, 157, 82, 0.3); backdrop-filter: grayscale(1) brightness(0.4) blur(2px); }
         .used-label { color: #fff; font-size: 0.6rem; font-weight: 900; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); }
 
-        .current-used { opacity: 0.1; filter: grayscale(1); pointer-events: none; }
-        .active-turn-slot { border: 2px solid #fff !important; box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); animation: slot-focus-pulse 1.5s infinite ease-in-out; background: rgba(255, 255, 255, 0.2) !important; }
-        @keyframes slot-focus-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+        .current-used { opacity: 0.1; filter: grayscale(1); pointer-events: none; transform: scale(0.9); }
+        
+        .active-turn-slot {
+            border: 2px solid #fff !important;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
+            animation: slot-focus-pulse 1.5s infinite ease-in-out !important;
+            background: rgba(255, 255, 255, 0.2) !important;
+            z-index: 10;
+        }
 
-        .footer-disclaimer { margin-top: 50px; padding: 20px; font-size: 0.5rem; color: rgba(255, 255, 255, 0.4); text-align: center; line-height: 1.6; border-top: 1px solid rgba(255, 255, 255, 0.05); }
+        @keyframes slot-focus-pulse {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.03); filter: brightness(1.3); }
+        }
+
+        .ban-slot.active-turn-slot {
+            border-color: var(--ban-red) !important;
+            box-shadow: 0 0 20px rgba(255, 71, 71, 0.6);
+        }
+        
+        .footer-disclaimer {
+            margin-top: 50px;
+            padding: 20px;
+            font-size: 0.5rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: center;
+            line-height: 1.6;
+            width: 100%;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
     </style>
 </head>
 <body>
@@ -177,10 +304,6 @@
         <div class="role-card o" onclick="setRole('o')">
             <div class="role-icon">🟠</div>
             <h3>ORANGE TEAM</h3>
-        </div>
-        <div class="role-card viewer" onclick="setRole('viewer')">
-            <div class="role-icon">📺</div>
-            <h3>WATCHER</h3>
         </div>
     </div>
 
@@ -203,6 +326,7 @@
         <button onclick="changeGame(4)" id="tab4">GAME 4</button>
         <button onclick="changeGame(5)" id="tab5">GAME 5</button>
     </div>
+    
     <div class="admin-controls">
         <div style="display: flex; gap: 20px; align-items: center;">
             <button class="swap-btn" onclick="toggleFirstPick()">⇄ 先攻切り替え</button>
@@ -215,12 +339,13 @@
         </div>
         <div style="display: flex; gap: 25px; margin-top: 5px;">
             <button class="reset-btn reset-current" onclick="resetCurrentGame()">現在の試合をやり直す</button>
-            <button class="reset-btn" onclick="resetAll()">全試合を完全にリセット</button>
+            <button class="reset-btn" onclick="resetAll()">全試合をリセット</button>
         </div>
         <div id="my-role-display" style="font-size: 0.75rem; color: #aaa; margin-top: 5px; background: rgba(255,255,255,0.08); padding: 4px 15px; border-radius: 50px; font-weight: bold; letter-spacing: 1px;">MODE: --</div>
     </div>
+
     <div class="status-container">
-        <div class="status-bar" id="status-msg">WAITING...</div>
+        <div class="status-bar" id="status-msg">WAITING FOR DRAFT</div>
         <div class="timer-display" id="timer">--</div>
     </div>
 </div>
@@ -228,7 +353,10 @@
 <div class="main-layout">
     <div class="side-panel">
         <div class="team-box team-purple" id="panel-p">
-            <h2><span class="editable-name" contenteditable="true" spellcheck="false" id="name-p">PURPLE</span><span id="badge-p" class="order-badge">先攻</span></h2>
+            <h2>
+                <span class="editable-name" contenteditable="true" spellcheck="false" id="name-p">PURPLE</span>
+                <span id="badge-p" class="order-badge">先攻</span>
+            </h2>
             <div class="ban-group">
                 <div class="ban-slot" id="p-ban-0"></div>
                 <div class="ban-slot" id="p-ban-1"></div>
@@ -248,7 +376,10 @@
 
     <div class="side-panel">
         <div class="team-box team-orange" id="panel-o">
-            <h2><span class="editable-name" contenteditable="true" spellcheck="false" id="name-o">ORANGE</span><span id="badge-o" class="order-badge">後攻</span></h2>
+            <h2>
+                <span class="editable-name" contenteditable="true" spellcheck="false" id="name-o">ORANGE</span>
+                <span id="badge-o" class="order-badge">後攻</span>
+            </h2>
             <div class="ban-group">
                 <div class="ban-slot" id="o-ban-0"></div>
                 <div class="ban-slot" id="o-ban-1"></div>
@@ -266,50 +397,76 @@
 </div>
 
 <script>
+    // 🌟 Firebaseの初期化設定（いただいた鍵を使用しています！）
+    const firebaseConfig = {
+      apiKey: "AIzaSyCTb7Db3ZN-qhCaPrqwfymMG5BTQH_Wpgs",
+      authDomain: "unite-fearlessdraft-tool.firebaseapp.com",
+      databaseURL: "https://unite-fearlessdraft-tool-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "unite-fearlessdraft-tool",
+      storageBucket: "unite-fearlessdraft-tool.firebasestorage.app",
+      messagingSenderId: "541205384892",
+      appId: "1:541205384892:web:aa26d0bc1ee94797a3cab9"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let roomRef = null;
+
     const pokemonNames = ["アローラキュウコン", "アローラライチュウ", "インテレオン", "ウッウ", "エースバーン", "エーフィ", "グレイシア", "グレンアルマ", "ゲッコウガ", "サーナイト", "シャンデラ", "ジュナイパー", "ジュラルドン", "ドラパルト", "ニンフィア", "ピカチュウ", "フシギバナ", "マフォクシー", "ミュウ", "ミュウツーY", "ミライドン", "ラティオス", "イワパレス", "オーロット", "カビゴン", "カメックス", "シャワーズ", "ヌメルゴン", "ブラッキー", "ホウオウ", "マンムー", "ヤドラン", "ヨクバリス", "ラプラス", "アブソル", "ガラルギャロップ", "ゲンガー", "ゼラオラ", "ゾロアーク", "ダークライ", "ドードリオ", "ニャース", "ファイアロー", "マスカーニャ", "リーフィア", "アマージョ", "ウーラオス", "エンペルト", "カイリキー", "カイリュー", "ガブリアス", "ギャラドス", "メガギャラドス", "ギルガルド", "ザシアン", "スイクン", "ソウブレイズ", "ダダリン", "タイレーツ", "デカヌチャン", "ネギガナイト", "パーモット", "バシャーモ", "ハッサム", "バンギラス", "マッシブーン", "マリルリ", "ミミッキュ", "ミュウツーX", "メタグロス", "リザードン", "メガリザードンX", "メガリザードンY", "ルカリオ", "メガルカリオ", "キュワワー", "コダック", "ハピナス", "バリヤード", "ピクシー", "フーパ", "プクリン", "マホイップ", "ヤミラミ", "ラティアス", "ワタシラガ"];
     let usedP = new Set(), usedO = new Set(), currentRoundUsed = new Set();
-    let turnIndex = 0, firstTeam = 'p', timeLeft = 0, timerInterval = null, isWaitingForPick = false, isPaused = false, myRole = 'none';
+    let turnIndex = 0, firstTeam = 'p', timeLeft = 0, timerInterval = null;
+    let isWaitingForPick = false; 
+    let isPaused = false;
+    let myRole = 'none';
+    let currentGameNum = 1;
 
     const urlParams = new URLSearchParams(window.location.search);
     let roomId = urlParams.get('room');
-    let hostRole = urlParams.get('host'); // 'p' or 'o'
+    let hostRole = urlParams.get('host');
 
     window.addEventListener('DOMContentLoaded', () => {
         if (roomId && hostRole) {
             document.getElementById('welcome-title').innerText = 'ONLINE MATCH: JOIN ROOM';
             document.querySelector('.role-card.solo').style.display = 'none';
-            document.querySelector('.role-card.viewer').style.display = 'none';
-            
             const hostCard = document.querySelector(`.role-card.${hostRole}`);
-            hostCard.classList.add('locked');
-            hostCard.querySelector('h3').innerText += ' (TAKEN)';
+            if (hostCard) {
+                hostCard.classList.add('locked');
+                hostCard.querySelector('h3').innerText += ' (TAKEN)';
+            }
         }
     });
 
     function setRole(role) {
         myRole = role;
-        
         document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
-        if (role !== 'solo' && role !== 'viewer') {
+        if (role !== 'solo') {
             document.querySelector(`.role-card.${role}`).classList.add('selected');
         }
 
         if (roomId) {
+            // ゲスト参加時
+            roomRef = db.ref('rooms/' + roomId);
+            setupFirebaseListener();
             finishSetup(role);
         } else {
-            if (role === 'solo' || role === 'viewer') {
+            if (role === 'solo') {
                 finishSetup(role);
             } else {
+                // ホスト作成時
                 roomId = Math.random().toString(36).substring(2, 8);
                 hostRole = role;
-                
+                roomRef = db.ref('rooms/' + roomId);
+
+                // データベースに初期情報をセット
+                roomRef.set({
+                    hostRole: role, currentGame: 1, firstTeam: 'p',
+                    names: { p: 'PURPLE', o: 'ORANGE' }, selections: []
+                });
+                setupFirebaseListener();
+
                 const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}&host=${role}`;
                 document.getElementById('invite-url').value = inviteUrl;
-                
                 document.getElementById('invite-section').style.display = 'flex';
                 document.querySelector('.role-card.solo').style.display = 'none';
-                document.querySelector('.role-card.viewer').style.display = 'none';
-                
                 const otherTeam = role === 'p' ? 'o' : 'p';
                 document.querySelector(`.role-card.${otherTeam}`).classList.add('locked');
             }
@@ -332,18 +489,68 @@
     }
 
     function closeRoleSelector() { finishSetup(myRole); }
-
     function finishSetup(role) {
         document.getElementById('role-selector').style.opacity = '0';
         setTimeout(() => document.getElementById('role-selector').style.display = 'none', 500);
-        
-        const labels = {solo: '🕹️ SOLO MODE', p: '🟣 PURPLE TEAM', o: '🟠 ORANGE TEAM', viewer: '📺 WATCHER'};
+        const labels = {solo: '🕹️ SOLO MODE', p: '🟣 PURPLE TEAM', o: '🟠 ORANGE TEAM'};
         let displayStr = `MODE: ${labels[role]}`;
         if (roomId && role !== 'solo') displayStr += ` / ROOM: [${roomId}]`;
         document.getElementById('my-role-display').innerText = displayStr;
-        
         initGrid();
     }
+
+    // 🌟 相手の画面から送られてきたデータを受け取る魔法の耳
+    function setupFirebaseListener() {
+        roomRef.on('value', snapshot => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            // チーム名の同期
+            if (data.names) {
+                const np = document.getElementById('name-p'), no = document.getElementById('name-o');
+                if (np.innerText !== data.names.p && document.activeElement !== np) np.innerText = data.names.p;
+                if (no.innerText !== data.names.o && document.activeElement !== no) no.innerText = data.names.o;
+            }
+
+            // 先攻後攻の同期
+            if (data.firstTeam && data.firstTeam !== firstTeam) {
+                firstTeam = data.firstTeam;
+                updateBadges();
+            }
+
+            const newSelections = data.selections || [];
+
+            // 試合の切り替えの同期
+            if (data.currentGame && data.currentGame !== currentGameNum) {
+                currentGameNum = data.currentGame;
+                if (data.usedP) usedP = new Set(data.usedP); else usedP.clear();
+                if (data.usedO) usedO = new Set(data.usedO); else usedO.clear();
+                
+                document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
+                document.getElementById(`tab${currentGameNum}`).classList.add('active');
+                resetCurrentDraftLocally();
+            } else if (newSelections.length === 0 && turnIndex > 0) {
+                // 現在の試合のリセットの同期
+                resetCurrentDraftLocally();
+            }
+
+            // ポケモン選択の同期（自分の画面に反映させる）
+            while (turnIndex < newSelections.length) {
+                executeSelectionLocally(newSelections[turnIndex]);
+            }
+        });
+    }
+
+    // 名前の変更をデータベースに送る
+    document.querySelectorAll('.editable-name').forEach(el => {
+        el.addEventListener('blur', (e) => {
+            if (roomId) {
+                const team = e.target.id === 'name-p' ? 'p' : 'o';
+                roomRef.child('names').child(team).set(e.target.innerText);
+            }
+        });
+        el.addEventListener('input', () => { if(!isWaitingForPick) highlightTurn(); });
+    });
 
     function getSequence() {
         const p1 = firstTeam, p2 = (firstTeam === 'p' ? 'o' : 'p');
@@ -351,24 +558,29 @@
             {t:p1, m:'B', i:0, time:15}, {t:p2, m:'B', i:0, time:15},
             {t:p1, m:'B', i:1, time:15}, {t:p2, m:'B', i:1, time:15},
             {t:p1, m:'B', i:2, time:15}, {t:p2, m:'B', i:2, time:15},
-            {t:p1, m:'P', i:0, time:30}, 
-            {t:p2, m:'P', i:0, time:30}, {t:p2, m:'P', i:1, time:0},
+            {t:p1, m:'P', i:0, time:30}, {t:p2, m:'P', i:0, time:30}, {t:p2, m:'P', i:1, time:0},
             {t:p1, m:'P', i:1, time:30}, {t:p1, m:'P', i:2, time:0},
             {t:p2, m:'P', i:2, time:30}, {t:p2, m:'P', i:3, time:0},
-            {t:p1, m:'P', i:3, time:30}, {t:p1, m:'P', i:4, time:0},
-            {t:p2, m:'P', i:4, time:30}
+            {t:p1, m:'P', i:3, time:30}, {t:p1, m:'P', i:4, time:0}, {t:p2, m:'P', i:4, time:30}
         ];
     }
 
     function initGrid() {
-        const grid = document.getElementById('pokemon-list'), step = getSequence()[turnIndex];
+        const grid = document.getElementById('pokemon-list');
+        const step = getSequence()[turnIndex];
         grid.innerHTML = '';
         pokemonNames.forEach(name => {
-            const card = document.createElement('div'), isUsed = currentRoundUsed.has(name);
-            const readonly = myRole === 'viewer' || (myRole !== 'solo' && step && myRole !== step.t);
-            card.className = `pokemon-card ${isUsed ? 'current-used' : ''} ${readonly ? 'readonly' : ''}`;
+            const card = document.createElement('div');
+            const readonly = (myRole !== 'solo' && step && myRole !== step.t);
+            card.className = `pokemon-card ${currentRoundUsed.has(name) ? 'current-used' : ''} ${readonly ? 'readonly' : ''}`;
             const pUsed = usedP.has(name), oUsed = usedO.has(name);
-            card.innerHTML = `<div class="status-overlay"><div class="status-p ${pUsed?'used-p-bg':''}">${pUsed?'<span class="used-label">USED</span>':''}</div><div class="status-o ${oUsed?'used-o-bg':''}">${oUsed?'<span class="used-label">USED</span>':''}</div></div><div class="img-box"><img src="img/${name}.png" onerror="this.style.opacity='0.2';"></div><div class="name">${name}</div>`;
+            card.innerHTML = `
+                <div class="status-overlay">
+                    <div class="status-p ${pUsed ? 'used-p-bg' : ''}">${pUsed ? '<span class="used-label">USED</span>' : ''}</div>
+                    <div class="status-o ${oUsed ? 'used-o-bg' : ''}">${oUsed ? '<span class="used-label">USED</span>' : ''}</div>
+                </div>
+                <div class="img-box"><img src="img/${name}.png" onerror="this.style.opacity='0.2';"></div>
+                <div class="name">${name}</div>`;
             if (!readonly) card.onclick = () => handleSelect(name);
             grid.appendChild(card);
         });
@@ -378,80 +590,185 @@
     function handleSelect(name) {
         const step = getSequence()[turnIndex];
         if (!step || currentRoundUsed.has(name)) return;
-        if (step.m === 'P' && ((step.t === 'p' && usedP.has(name)) || (step.t === 'o' && usedO.has(name)))) return;
-        if (step.m === 'B') document.getElementById(`${step.t}-ban-${step.i}`).innerHTML = `<img src="img/${name}.png"><div class="ban-label">${name}</div>`;
-        else { const slot = document.getElementById(`${step.t}-pick-${step.i}`); slot.classList.add('filled'); slot.innerHTML = `<img src="img/${name}.png"> <span>${name}</span>`; slot.dataset.pokemon = name; }
-        currentRoundUsed.add(name); isWaitingForPick = false; turnIndex++; initGrid();
+        if (step.m === 'P') {
+            if ((step.t === 'p' && usedP.has(name)) || (step.t === 'o' && usedO.has(name))) return;
+        }
+        
+        // 🌟 変更点: オンラインならデータベースに「これ選んだよ！」と送るだけにする
+        if (roomId) {
+            roomRef.child('selections').child(turnIndex).set(name);
+        } else {
+            // ソロモードならそのまま画面に反映
+            executeSelectionLocally(name);
+        }
+    }
+
+    // 🌟 以前のhandleSelectの中身（実際に画面を動かす処理）を分離しました
+    function executeSelectionLocally(name) {
+        const step = getSequence()[turnIndex];
+        
+        // タイムアウト時のBANスキップ処理
+        if (name === 'TIMEOUT' && step.m === 'B') {
+            document.getElementById(`${step.t}-ban-${step.i}`).innerHTML = `<div class="ban-none">🚫<div class="ban-none-text">NO BAN</div></div>`;
+            turnIndex++; initGrid(); return;
+        }
+
+        if (step.m === 'B') {
+            document.getElementById(`${step.t}-ban-${step.i}`).innerHTML = `<img src="img/${name}.png"><div class="ban-label">${name}</div>`;
+        } else {
+            const slot = document.getElementById(`${step.t}-pick-${step.i}`);
+            slot.classList.add('filled');
+            slot.innerHTML = `<img src="img/${name}.png"> <span>${name}</span>`;
+            slot.dataset.pokemon = name;
+        }
+        
+        currentRoundUsed.add(name);
+        isWaitingForPick = false; 
+        turnIndex++;
+        initGrid();
     }
 
     function startTimer(seconds) {
         clearInterval(timerInterval); isWaitingForPick = false; isPaused = false; updateStopBtnUI();
         if (!document.getElementById('timer-toggle').checked || seconds === 0) return;
         timeLeft = seconds; updateTimerDisplay();
-        timerInterval = setInterval(() => { if (!isPaused) { timeLeft--; updateTimerDisplay(); if (timeLeft <= 0) { clearInterval(timerInterval); handleTimeout(); } } }, 1000);
+        timerInterval = setInterval(() => {
+            if (!isPaused) {
+                timeLeft--; updateTimerDisplay();
+                if (timeLeft <= 0) { clearInterval(timerInterval); handleTimeout(); }
+            }
+        }, 1000);
     }
 
     function updateTimerDisplay() {
         const d = document.getElementById('timer');
         if (isWaitingForPick) { d.innerText = "TIME UP!"; d.className = "timer-display timer-timeout"; return; }
         d.innerText = timeLeft; d.className = "timer-display" + (timeLeft <= 5 ? " timer-urgent" : "");
+        if (isPaused) d.style.opacity = "0.5"; else d.style.opacity = "1";
     }
 
-    function toggleTimerPause() { if (!document.getElementById('timer-toggle').checked) return; isPaused = !isPaused; updateStopBtnUI(); }
-    function updateStopBtnUI() { const btn = document.getElementById('timer-stop-btn'); btn.disabled = !document.getElementById('timer-toggle').checked; btn.innerText = isPaused ? "再開" : "ストップ"; if(isPaused) btn.classList.add('paused'); else btn.classList.remove('paused'); }
+    function toggleTimerPause() {
+        if (!document.getElementById('timer-toggle').checked || isWaitingForPick) return;
+        isPaused = !isPaused; updateStopBtnUI(); updateTimerDisplay();
+    }
+
+    function updateStopBtnUI() {
+        const btn = document.getElementById('timer-stop-btn');
+        const isEnabled = document.getElementById('timer-toggle').checked;
+        btn.disabled = !isEnabled;
+        if (isPaused) { btn.innerText = "再開"; btn.classList.add('paused'); }
+        else { btn.innerText = "ストップ"; btn.classList.remove('paused'); }
+    }
 
     function handleTimeout() {
-        const step = getSequence()[turnIndex]; if (!step) return;
-        if (step.m === 'B') { document.getElementById(`${step.t}-ban-${step.i}`).innerHTML = `<div class="ban-none">🚫</div>`; turnIndex++; initGrid(); }
-        else { isWaitingForPick = true; updateTimerDisplay(); if (myRole === 'solo' || myRole === step.t) setTimeout(() => { while(true) if(confirm("時間切れです！選択してください。")) break; }, 100); }
+        const step = getSequence()[turnIndex];
+        if (!step) return;
+
+        if (step.m === 'B') {
+            // 🌟 自分のターンかホストの場合のみ、タイムアウト処理を送信
+            if (myRole === 'solo' || myRole === step.t) {
+                if (roomId) roomRef.child('selections').child(turnIndex).set('TIMEOUT');
+                else executeSelectionLocally('TIMEOUT');
+            }
+        } else {
+            isWaitingForPick = true; updateTimerDisplay();
+            const teamName = document.getElementById(`name-${step.t}`).innerText;
+            const msg = document.getElementById('status-msg');
+            msg.innerText = `${teamName} - SELECT NOW!`; msg.style.color = "var(--ban-red)";
+            if (myRole === 'solo' || myRole === step.t) {
+                setTimeout(() => { while(true) { if(confirm(`【時間切れ】\n${teamName}チームの番です。ポケモンを選択してください。`)) break; } }, 100);
+            }
+        }
     }
 
     function highlightTurn() {
         if (isWaitingForPick) return;
-        document.querySelectorAll('.pick-slot, .ban-slot, .team-box').forEach(s => s.classList.remove('active-team', 'active-turn-slot'));
-        const sequence = getSequence(), step = sequence[turnIndex];
+        document.querySelectorAll('.pick-slot, .ban-slot, .team-box').forEach(s => { s.classList.remove('active-turn', 'active-team', 'active-turn-slot'); });
+
+        const sequence = getSequence(), step = sequence[turnIndex], statusMsg = document.getElementById('status-msg');
         if (step) {
             document.getElementById(`panel-${step.t}`).classList.add('active-team');
-            const slotId = step.m === 'B' ? `${step.t}-ban-${step.i}` : `${step.t}-pick-${step.i}`;
-            document.getElementById(slotId).classList.add('active-turn-slot');
+            if (step.m === 'B') document.getElementById(`${step.t}-ban-${step.i}`).classList.add('active-turn-slot');
+            else {
+                document.getElementById(`${step.t}-pick-${step.i}`).classList.add('active-turn-slot');
+                const nextStep = sequence[turnIndex + 1];
+                if (nextStep && nextStep.time === 0 && nextStep.m === 'P') document.getElementById(`${nextStep.t}-pick-${nextStep.i}`).classList.add('active-turn-slot');
+            }
+
             const teamName = document.getElementById(`name-${step.t}`).innerText;
-            const msg = document.getElementById('status-msg');
-            msg.innerText = `${teamName} ${step.m === 'B' ? 'BANNING' : 'PICKING'}`;
-            msg.style.color = step.t === 'p' ? 'var(--purple)' : 'var(--orange)';
-            if (step.time > 0) startTimer(step.time); else document.getElementById('timer').innerText = "--";
-        } else { clearInterval(timerInterval); document.getElementById('timer').innerText = "--"; document.getElementById('status-msg').innerText = "COMPLETE"; }
+            statusMsg.innerText = `${teamName} ${step.m === 'B' ? 'BANNING' : 'PICKING'}`;
+            statusMsg.style.color = step.t === 'p' ? 'var(--purple)' : 'var(--orange)';
+            
+            if (step.time > 0) startTimer(step.time);
+            else if (step.time === 0 && turnIndex > 0) document.getElementById('timer').innerText = "--";
+        } else {
+            clearInterval(timerInterval); document.getElementById('timer').innerText = "--"; document.getElementById('timer').className = "timer-display";
+            statusMsg.innerText = `DRAFT COMPLETE`; statusMsg.style.color = "#fff";
+        }
     }
 
-    function handleTimerToggle() { updateStopBtnUI(); if (!document.getElementById('timer-toggle').checked) { clearInterval(timerInterval); document.getElementById('timer').innerText = "--"; } else { const step = getSequence()[turnIndex]; if(step) startTimer(step.m==='B'?15:30); } }
-    function toggleFirstPick() { firstTeam = (firstTeam === 'p' ? 'o' : 'p'); updateBadges(); resetCurrentDraft(); }
+    function handleTimerToggle() {
+        const isEnabled = document.getElementById('timer-toggle').checked; updateStopBtnUI();
+        if (!isEnabled) { clearInterval(timerInterval); document.getElementById('timer').innerText = "--"; isPaused = false; }
+        else { const step = getSequence()[turnIndex]; if (step) { startTimer((step.m === 'B') ? 15 : 30); } }
+    }
+
+    function toggleFirstPick() { 
+        if (roomId) roomRef.update({ firstTeam: (firstTeam === 'p' ? 'o' : 'p'), selections: [] });
+        else { firstTeam = (firstTeam === 'p' ? 'o' : 'p'); updateBadges(); resetCurrentDraftLocally(); }
+    }
+
     function updateBadges() {
         const bp = document.getElementById('badge-p'), bo = document.getElementById('badge-o');
         bp.innerText = firstTeam === 'p' ? '先攻' : '後攻'; bp.className = firstTeam === 'p' ? 'order-badge order-1st' : 'order-badge';
         bo.innerText = firstTeam === 'o' ? '先攻' : '後攻'; bo.className = firstTeam === 'o' ? 'order-badge order-1st' : 'order-badge';
     }
-    function resetCurrentDraft() { turnIndex = 0; currentRoundUsed.clear(); isWaitingForPick = false; isPaused = false; document.querySelectorAll('.pick-slot').forEach((s, i) => { s.innerHTML = `Pick ${i+1}`; s.classList.remove('filled'); delete s.dataset.pokemon; }); document.querySelectorAll('.ban-slot').forEach(s => s.innerHTML = ""); initGrid(); }
+
+    function resetCurrentDraftLocally() { 
+        turnIndex = 0; currentRoundUsed.clear(); isWaitingForPick = false; isPaused = false;
+        document.querySelectorAll('.pick-slot').forEach((s, i) => { s.innerHTML = `Pick ${i+1}`; s.classList.remove('filled'); delete s.dataset.pokemon; }); 
+        document.querySelectorAll('.ban-slot').forEach(s => s.innerHTML = ""); 
+        initGrid(); 
+    }
     
-    // 追加: 現在の試合のみをリセットする機能
     function resetCurrentGame() {
         if(confirm("現在の進行状況を最初からやり直しますか？\n（他の試合のPick履歴には影響しません）")) {
-            resetCurrentDraft();
+            if (roomId) roomRef.child('selections').remove();
+            else resetCurrentDraftLocally();
         }
     }
 
     function changeGame(num) {
         document.querySelectorAll('#picks-purple .pick-slot').forEach(s => { if(s.dataset.pokemon) usedP.add(s.dataset.pokemon); });
         document.querySelectorAll('#picks-orange .pick-slot').forEach(s => { if(s.dataset.pokemon) usedO.add(s.dataset.pokemon); });
-        document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
-        document.getElementById(`tab${num}`).classList.add('active'); resetCurrentDraft();
+        
+        if (roomId) {
+            roomRef.update({ currentGame: num, selections: [], usedP: Array.from(usedP), usedO: Array.from(usedO) });
+        } else {
+            document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab${num}`).classList.add('active'); resetCurrentDraftLocally();
+        }
+    }
+
+    function resetAll() { 
+        if(confirm("全試合の記録をリセットしますか？")) { 
+            if (roomId) {
+                roomRef.set({ hostRole: hostRole, currentGame: 1, firstTeam: 'p', names: { p: 'PURPLE', o: 'ORANGE' }, selections: [], usedP: [], usedO: [] });
+            } else {
+                usedP.clear(); usedO.clear(); changeGame(1); 
+            }
+        } 
     }
     
-    function resetAll() { if(confirm("すべての試合の履歴を完全にリセットしますか？\n（GAME 1に戻ります）")) { usedP.clear(); usedO.clear(); changeGame(1); } }
-    
-    updateBadges();
+    updateBadges(); 
 </script>
 
 <footer class="footer-disclaimer">
-    <p>当サイトはファンによる非営利プロジェクトであり、公式各社とは関係ありません。&copy;2026 Developed by kirimi</p>
+    <p>
+        当サイトはファンによる非営利目的のプロジェクトであり、株式会社ポケモン、Nintendo、Creatures Inc.、GAME FREAK inc.、およびTencent Gamesとは一切関係ありません。<br>
+        『Pokémon UNITE』に関するすべての画像および知的財産権は、各権利者に帰属します。
+    </p>
+    <p>&copy;2026 Developed by kirimi</p>
 </footer>
 </body>
 </html>
