@@ -410,10 +410,7 @@
     let turnIndex = 0, firstTeam = 'p', timeLeft = 0, timerInterval = null;
     let isWaitingForPick = false; 
     let isPaused = false;
-    
-    // 🌟 追加：タイマーのON/OFF状態を絶対に間違えないための専用変数
     let isTimerEnabled = false; 
-    
     let myRole = 'none';
     let currentGameNum = 1;
     let lastResetTimestamp = null; 
@@ -519,17 +516,12 @@
                 lastResetTimestamp = 0;
             }
 
-            // 🌟 修正：画面のチェックボックスではなく、プログラムの変数を使って確実に同期させる
-            if (data.timerEnabled !== undefined) {
-                if (isTimerEnabled !== data.timerEnabled) {
-                    applyTimerToggleLocal(data.timerEnabled);
-                }
+            if (data.timerEnabled !== undefined && isTimerEnabled !== data.timerEnabled) {
+                applyTimerToggleLocal(data.timerEnabled);
             }
 
-            if (data.timerPaused !== undefined) {
-                if (isPaused !== data.timerPaused) {
-                    applyTimerPauseLocal(data.timerPaused);
-                }
+            if (data.timerPaused !== undefined && isPaused !== data.timerPaused) {
+                applyTimerPauseLocal(data.timerPaused);
             }
 
             if (data.names) {
@@ -646,46 +638,40 @@
         initGrid();
     }
 
-    // 🌟 修正：タイマーのON/OFF操作に関する安全な処理
+    // 🌟 タイマー操作：自分自身の画面を「即座に」動かし、その上で相手に通知を送る
     function handleTimerToggle() {
         const isEnabled = document.getElementById('timer-toggle').checked;
-        if (roomId) {
-            // 通信相手に「変更したよ」と伝えるだけにする
-            roomRef.update({ timerEnabled: isEnabled });
-        } else {
-            // ソロモードの場合はそのまま適用する
-            applyTimerToggleLocal(isEnabled);
-        }
+        applyTimerToggleLocal(isEnabled); // 通信の返事を待たずに即反映
+        
+        if (roomId) roomRef.update({ timerEnabled: isEnabled });
     }
 
     function applyTimerToggleLocal(isEnabled) {
-        isTimerEnabled = isEnabled; // 変数を確実に更新
+        isTimerEnabled = isEnabled; 
         document.getElementById('timer-toggle').checked = isEnabled;
         updateStopBtnUI();
-        
+
         if (!isEnabled) {
-            // OFFにされたらタイマーを完全に破壊する
             clearInterval(timerInterval);
             document.getElementById('timer').innerText = "--";
-            document.getElementById('timer').className = "timer-display"; // 赤文字点滅などを初期化
+            document.getElementById('timer').className = "timer-display"; 
             isPaused = false;
-            isWaitingForPick = false; // タイムアウトのアラート待機状態なども解除
+            isWaitingForPick = false; 
         } else {
-            // ONにされたら、いま動くべき秒数で再スタート
             const step = getSequence()[turnIndex];
-            if (step && !isWaitingForPick) startTimer(step.m === 'B' ? 15 : 30);
+            if (step && !isWaitingForPick) {
+                if (step.time > 0) startTimer(step.time);
+                else if (step.time === 0 && turnIndex > 0) document.getElementById('timer').innerText = "--";
+            }
         }
     }
 
     function toggleTimerPause() {
-        // 🌟 修正：画面ではなく変数でチェック
         if (!isTimerEnabled || isWaitingForPick) return;
         const newPauseState = !isPaused;
-        if (roomId) {
-            roomRef.update({ timerPaused: newPauseState });
-        } else {
-            applyTimerPauseLocal(newPauseState);
-        }
+        applyTimerPauseLocal(newPauseState); // 通信の返事を待たずに即反映
+        
+        if (roomId) roomRef.update({ timerPaused: newPauseState });
     }
 
     function applyTimerPauseLocal(newPauseState) {
@@ -696,9 +682,7 @@
 
     function startTimer(seconds) {
         clearInterval(timerInterval); isWaitingForPick = false; updateStopBtnUI();
-        
-        // 🌟 修正：画面ではなく変数でチェック
-        if (!isTimerEnabled || seconds === 0) return;
+        if (!isTimerEnabled || seconds <= 0) return;
         
         timeLeft = seconds; updateTimerDisplay();
         timerInterval = setInterval(() => {
@@ -718,7 +702,6 @@
 
     function updateStopBtnUI() {
         const btn = document.getElementById('timer-stop-btn');
-        // 🌟 修正：画面ではなく変数でチェック
         btn.disabled = !isTimerEnabled;
         if (isPaused) { btn.innerText = "再開"; btn.classList.add('paused'); }
         else { btn.innerText = "ストップ"; btn.classList.remove('paused'); }
@@ -729,7 +712,8 @@
         if (!step) return;
 
         if (step.m === 'B') {
-            if (myRole === 'solo' || myRole === step.t) {
+            // 🌟 ホストは「相手のBAN時間が0秒になった時」でも、相手の代わりにスキップボタンを押せる特権を持つ
+            if (myRole === 'solo' || myRole === step.t || myRole === hostRole) {
                 if (roomId) {
                     roomRef.child('selections').child(turnIndex).set('TIMEOUT');
                     roomRef.update({ timerPaused: false });
@@ -741,6 +725,8 @@
             const teamName = document.getElementById(`name-${step.t}`).innerText;
             const msg = document.getElementById('status-msg');
             msg.innerText = `${teamName} - SELECT NOW!`; msg.style.color = "var(--ban-red)";
+            
+            // アラートのポップアップは、操作すべき本人にしか出さない
             if (myRole === 'solo' || myRole === step.t) {
                 setTimeout(() => { while(true) { if(confirm(`【時間切れ】\n${teamName}チームの番です。ポケモンを選択してください。`)) break; } }, 100);
             }
