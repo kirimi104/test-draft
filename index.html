@@ -42,7 +42,7 @@
             animation: scene-in 0.8s var(--ios-ease) forwards;
         }
 
-        /* ▼▼ モード選択：⑤の枠組み＋③の点滅 ▼▼ */
+        /* ▼▼ モード選択のTVモチーフ（⑤＋③ハイブリッド）スタイル ▼▼ */
         #role-selector {
             position: fixed; inset: 0; background: #050505;
             z-index: 9999; display: flex; align-items: center; justify-content: center;
@@ -441,7 +441,7 @@
         }, 1000);
     }
 
-    /* ▼▼ モード選択のJS切り替え（招待URLからアクセスした時用） ▼▼ */
+    /* ▼▼ モード選択のJS切り替え用修正部分 ▼▼ */
     window.addEventListener('DOMContentLoaded', () => {
         if (roomId && hostRole) {
             document.querySelector('.welcome-title').innerText = 'JOIN ARENA';
@@ -449,19 +449,20 @@
             const joinRole = hostRole === 'p' ? 'o' : 'p';
             const container = document.getElementById('mode-cards-container');
             
-            // 招待用URLでアクセスした場合のカード
-            container.innerHTML = `
-                <div class="mode-card" style="--theme: ${joinRole === 'o' ? '#ff9d52' : '#a170ff'};" onclick="setRole('${joinRole}')">
-                    <div class="role-icon">${joinRole === 'o' ? '🟠' : '🟣'}</div>
-                    <h3 class="role-title">TEAM ${joinRole.toUpperCase()}</h3>
-                    <div class="data-banner"><span class="blink-text">▶ 対戦相手として参加する</span></div>
-                </div>
-                <div class="mode-card" style="--theme: #00e5ff;" onclick="setRole('spec')">
-                    <div class="role-icon">👁️</div>
-                    <h3 class="role-title">SPECTATOR</h3>
-                    <div class="data-banner"><span class="blink-text">▶ 観戦モードで入室する</span></div>
-                </div>
-            `;
+            if (container) {
+                container.innerHTML = `
+                    <div class="mode-card" style="--theme: ${joinRole === 'o' ? '#ff9d52' : '#a170ff'};" onclick="setRole('${joinRole}')">
+                        <div class="role-icon">${joinRole === 'o' ? '🟠' : '🟣'}</div>
+                        <h3 class="role-title">TEAM ${joinRole.toUpperCase()}</h3>
+                        <div class="data-banner"><span class="blink-text">▶ 対戦相手として参加する</span></div>
+                    </div>
+                    <div class="mode-card" style="--theme: #00e5ff;" onclick="setRole('spec')">
+                        <div class="role-icon">👁️</div>
+                        <h3 class="role-title">SPECTATOR</h3>
+                        <div class="data-banner"><span class="blink-text">▶ 観戦モードで入室する</span></div>
+                    </div>
+                `;
+            }
         }
     });
     /* ▲▲ ここまで ▲▲ */
