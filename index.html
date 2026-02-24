@@ -451,30 +451,15 @@
 
     function leaveRoom() {
         if (confirm("現在のモードを終了して、最初の画面に戻りますか？\n（オンライン対戦の場合は部屋から退出します）")) {
+            // 部屋に接続している場合は、退出ステータスを送信してからページをリロード
             if (roomId && myRole !== 'solo' && myRole !== 'spec') {
-                db.ref(`rooms/${roomId}/players/${myRole}`).set(false);
+                db.ref(`rooms/${roomId}/players/${myRole}`).set(false).then(() => {
+                    window.location.href = window.location.pathname;
+                });
+            } else {
+                // ソロモードや観戦モードの場合は、即座にページをリロードして完全リセット
+                window.location.href = window.location.pathname;
             }
-            myRole = 'none'; roomId = null; hostRole = null;
-            applyTimerToggleLocal(false); resetReadyUI();
-            window.history.pushState({}, document.title, window.location.pathname);
-
-            const selector = document.getElementById('role-selector');
-            selector.style.display = 'flex'; setTimeout(() => selector.style.opacity = '1', 10);
-            
-            document.querySelector('.role-card-container').style.display = 'flex';
-            document.getElementById('invite-section').style.display = 'none';
-            document.getElementById('welcome-title').innerText = 'FEARLESS DRAFT';
-            
-            const matchCard = document.getElementById('card-matching');
-            matchCard.className = 'cast-card purple';
-            matchCard.onclick = () => setRole('p'); 
-            matchCard.innerHTML = `
-                <div class="role-icon">🤝</div>
-                <h3>MATCHING MODE</h3>
-            `;
-            
-            document.getElementById('conn-p').style.display = 'none'; document.getElementById('conn-o').style.display = 'none';
-            document.getElementById('ready-overlay').style.display = 'none';
         }
     }
 
@@ -930,4 +915,5 @@
     <p>&copy;2026 Developed by kirimi</p>
 </footer>
 </body>
+
 </html>
