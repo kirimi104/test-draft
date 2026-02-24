@@ -14,6 +14,9 @@
             --orange: #ff9d52;
             --ban-red: #ff4747;
             --spec-cyan: #00e5ff;
+            --color-g: #199500;
+            --color-o: #cc7d00;
+            --color-b: #0071c0;
             --bg: #020205;
             --glass: rgba(20, 20, 30, 0.85);
             --ios-ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -30,16 +33,8 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
             background-color: var(--bg);
-            margin: 0;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            color: var(--text-main);
-            min-width: 1250px;
-            width: 100%;
-            overflow-x: auto;
+            margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; color: var(--text-main); min-width: 1250px; width: 100%; overflow-x: auto;
             background-image: 
                 radial-gradient(circle at 15% 15%, rgba(161, 112, 255, 0.12) 0%, transparent 45%),
                 radial-gradient(circle at 85% 85%, rgba(255, 157, 82, 0.08) 0%, transparent 45%),
@@ -58,50 +53,45 @@
             text-shadow: 0 0 15px rgba(255,255,255,0.4);
         }
         .role-card-container { 
-            display: flex; gap: 25px; margin-top: 40px; transition: 0.5s var(--ios-ease);
-            perspective: 1000px; /* 3D空間の基点 */
+            display: flex; gap: 30px; margin-top: 40px; transition: 0.5s var(--ios-ease);
+            perspective: 1000px;
         }
-        .role-card {
-            width: 170px; padding: 35px 15px; 
-            background: rgba(255,255,255,0.02); /* ダークな透過背景 */
+        
+        /* 指定されたベースCSS */
+        .cast-card {
+            width: 180px; padding: 35px 15px; 
+            background: rgba(255,255,255,0.02); 
             border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 16px; /* 少しシャープに */
+            border-radius: 16px; 
             text-align: center; cursor: pointer; 
             transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
             transform-style: preserve-3d;
             box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
         }
-        
-        /* それぞれのカラー発動と3D回転 */
-        .role-card.solo:hover {
+        .cast-card h3 { margin-top: 15px; font-size: 0.9rem; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
+        .role-icon { font-size: 3rem; transform: translateZ(15px); }
+
+        /* ホバー時にそれぞれのカラーが発動（指定CSSの組み込み） */
+        .cast-card.green:hover {
             transform: perspective(1000px) rotateX(10deg) rotateY(-10deg) translateZ(20px);
-            border-color: #fff; background: rgba(255,255,255,0.05);
-            box-shadow: -15px 15px 0px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255,255,255,0.2);
+            border-color: var(--color-g); background: rgba(25, 149, 0, 0.05);
+            box-shadow: -20px 20px 0px rgba(25, 149, 0, 0.1), 0 0 20px rgba(25, 149, 0, 0.3);
         }
-        .role-card.p:hover {
+        .cast-card.purple:hover {
             transform: perspective(1000px) rotateX(10deg) rotateY(0deg) translateZ(20px);
             border-color: var(--purple); background: rgba(161, 112, 255, 0.05);
-            box-shadow: 0px 20px 0px rgba(161, 112, 255, 0.15), 0 0 20px rgba(161,112,255,0.2);
+            box-shadow: 0px 20px 0px rgba(161, 112, 255, 0.1), 0 0 20px rgba(161, 112, 255, 0.3);
         }
-        .role-card.o:hover {
+        .cast-card.orange:hover {
+            transform: perspective(1000px) rotateX(10deg) rotateY(0deg) translateZ(20px);
+            border-color: var(--color-o); background: rgba(204, 125, 0, 0.05);
+            box-shadow: 0px 20px 0px rgba(204, 125, 0, 0.1), 0 0 20px rgba(204, 125, 0, 0.3);
+        }
+        .cast-card.blue:hover {
             transform: perspective(1000px) rotateX(10deg) rotateY(10deg) translateZ(20px);
-            border-color: var(--orange); background: rgba(255, 157, 82, 0.05);
-            box-shadow: 15px 15px 0px rgba(255, 157, 82, 0.15), 0 0 20px rgba(255,157,82,0.2);
+            border-color: var(--color-b); background: rgba(0, 113, 192, 0.05);
+            box-shadow: 20px 20px 0px rgba(0, 113, 192, 0.1), 0 0 20px rgba(0, 113, 192, 0.3);
         }
-        .role-card.spec:hover {
-            transform: perspective(1000px) rotateX(-10deg) rotateY(0deg) translateZ(20px);
-            border-color: var(--spec-cyan); background: rgba(0, 229, 255, 0.05);
-            box-shadow: 0px -20px 0px rgba(0, 229, 255, 0.15), 0 0 20px rgba(0,229,255,0.2);
-        }
-
-        .role-card h3 { margin-top: 15px; font-size: 0.85rem; letter-spacing: 2px; }
-        .role-icon { font-size: 2.5rem; transform: translateZ(10px); } /* アイコンだけ少し浮かせる */
-
-        .role-card.selected { 
-            background: rgba(255,255,255,0.1); border-color: #fff; 
-            transform: translateY(-10px) translateZ(10px); box-shadow: 0 20px 40px rgba(0,0,0,0.8); 
-        }
-        .role-card.locked { filter: grayscale(1) opacity(0.15); pointer-events: none; transform: none !important; border-color: transparent !important; box-shadow: none !important; }
 
         .invite-container {
             margin-top: 50px; padding: 25px 40px; background: rgba(255,255,255,0.03);
@@ -118,73 +108,45 @@
 
         .pokemon-card.readonly { cursor: not-allowed; filter: grayscale(0.9) opacity(0.3); transform: none !important; pointer-events: none; }
 
-        .header-section {
-            width: 96%; max-width: 1200px; background: var(--glass); backdrop-filter: blur(25px);
-            padding: 24px; border-radius: 30px; margin-bottom: 24px; text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
+        .header-section { width: 96%; max-width: 1200px; background: var(--glass); backdrop-filter: blur(25px); padding: 24px; border-radius: 30px; margin-bottom: 24px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .game-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        .game-tabs button {
-            padding: 10px 24px; border: none; border-radius: 12px; background: rgba(255,255,255,0.06); color: #888;
-            cursor: pointer; font-weight: 800; transition: all 0.3s var(--ios-ease);
-        }
+        .game-tabs button { padding: 10px 24px; border: none; border-radius: 12px; background: rgba(255,255,255,0.06); color: #888; cursor: pointer; font-weight: 800; transition: all 0.3s var(--ios-ease); }
         .game-tabs button:hover { transform: translateY(-2px); background: rgba(255,255,255,0.1); }
         .game-tabs button.active { background: #fff; color: #000; box-shadow: 0 0 20px rgba(255,255,255,0.4); transform: scale(1.05); }
 
         .admin-controls { display: flex; flex-direction: column; align-items: center; gap: 12px; }
         .swap-btn { padding: 10px 28px; border-radius: 50px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: 0.3s; }
         .swap-btn:active { transform: scale(0.95); }
-        
         .reset-btn { background: transparent; color: var(--ban-red); border: none; cursor: pointer; opacity: 0.6; font-size: 0.8rem; transition: 0.3s; }
         .reset-btn:hover { opacity: 1; text-decoration: underline; }
-        .reset-current { color: #bbb; }
-        .reset-current:hover { color: #fff; }
+        .reset-current { color: #bbb; } .reset-current:hover { color: #fff; }
 
-        .timer-controls {
-            display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.05);
-            padding: 8px 20px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .stop-btn {
-            background: #444; color: white; border: none; padding: 4px 15px; 
-            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem; transition: 0.2s;
-        }
-        .stop-btn:hover:not(:disabled) { background: #666; }
-        .stop-btn.paused { background: var(--timer-gold); color: #000; }
-
-        .leave-btn {
-            background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 4px 15px; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 0.75rem; transition: 0.3s; margin-left: 15px;
-        }
+        .timer-controls { display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); }
+        .stop-btn { background: #444; color: white; border: none; padding: 4px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem; transition: 0.2s; }
+        .stop-btn:hover:not(:disabled) { background: #666; } .stop-btn.paused { background: var(--timer-gold); color: #000; }
+        .leave-btn { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); padding: 4px 15px; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 0.75rem; transition: 0.3s; margin-left: 15px; }
         .leave-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
 
         .status-container { margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 40px; }
         .status-bar { font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; transition: 0.3s; }
-        
         @keyframes heartbeat { 0% { transform: scale(1); } 15% { transform: scale(1.1); } 30% { transform: scale(1); } 45% { transform: scale(1.15); } 100% { transform: scale(1); } }
         @keyframes blink-red { 0%, 100% { color: var(--ban-red); opacity: 1; } 50% { color: #fff; opacity: 0.5; } }
-
         .timer-display { font-size: 2.8rem; font-weight: 900; color: var(--timer-gold); min-width: 120px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.4); transition: color 0.3s; }
         .timer-urgent { animation: heartbeat 1s infinite; color: var(--ban-red) !important; }
         .timer-timeout { animation: blink-red 0.5s infinite; color: var(--ban-red) !important; font-size: 2rem; }
 
         .main-layout { display: flex; width: 98%; max-width: 1600px; justify-content: center; gap: 24px; padding: 0 20px; box-sizing: border-box; }
         .side-panel { width: 340px; flex-shrink: 0; }
-        
         @keyframes pulse-p { 0%, 100% { box-shadow: 0 0 10px rgba(161,112,255,0.1); } 50% { box-shadow: 0 0 30px rgba(161,112,255,0.4); } }
         @keyframes pulse-o { 0%, 100% { box-shadow: 0 0 10px rgba(255,157,82,0.1); } 50% { box-shadow: 0 0 30px rgba(255,157,82,0.4); } }
-
         .team-box { background: var(--glass); border-radius: 35px; padding: 24px; border: 2px solid rgba(255,255,255,0.05); transition: all 0.5s var(--ios-ease); }
         .team-purple.active-team { border-color: var(--purple); animation: pulse-p 2s infinite; }
         .team-orange.active-team { border-color: var(--orange); animation: pulse-o 2s infinite; }
-
         .editable-name { display: inline-block; cursor: text; padding: 2px 8px; border-radius: 8px; transition: 0.3s var(--bounce-ease); border: 1px solid transparent; outline: none; }
         .editable-name:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
         .editable-name:focus { background: rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.3); transform: scale(1.02); }
-
         .order-badge { font-size: 0.9rem; padding: 4px 12px; border-radius: 50px; background: rgba(255,255,255,0.1); vertical-align: middle; margin-left: 8px; }
         .order-1st { background: #fff; color: #000; box-shadow: 0 0 10px #fff; }
-
         .conn-badge { font-size: 0.65rem; padding: 4px 10px; border-radius: 50px; margin-left: 10px; font-weight: 900; transition: 0.4s var(--bounce-ease); display: none; vertical-align: middle; white-space: nowrap; }
         .conn-online { background: rgba(76, 175, 80, 0.15); color: #4CAF50; border: 1px solid #4CAF50; box-shadow: 0 0 12px rgba(76, 175, 80, 0.4); }
         .conn-offline { background: rgba(255, 71, 71, 0.1); color: var(--ban-red); border: 1px solid var(--ban-red); opacity: 0.6; }
@@ -193,7 +155,6 @@
         .ban-slot { flex: 1; aspect-ratio: 1/1; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         .ban-slot img { width: 75%; height: 75%; object-fit: contain; margin-bottom: 12px; animation: slot-pop 0.4s var(--bounce-ease); }
         .ban-label { position: absolute; bottom: 0; width: 100%; background: var(--ban-red); color: white; font-size: 0.65rem; text-align: center; font-weight: 900; padding: 3px 0; z-index: 2; }
-
         .ban-none { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(45deg, rgba(255,71,71,0.1), rgba(0,0,0,0.6)); color: rgba(255,255,255,0.4); font-size: 1.8rem; font-weight: 900; position: relative; }
         .ban-none::after { content: ""; position: absolute; width: 140%; height: 2px; background: var(--ban-red); transform: rotate(-45deg); opacity: 0.6; }
         .ban-none-text { font-size: 0.6rem; color: var(--ban-red); margin-top: 5px; letter-spacing: 1px; }
@@ -203,10 +164,8 @@
         .pick-slot img { width: 50px; height: 50px; margin-right: 15px; object-fit: contain; }
 
         .center-panel { flex: 1; min-width: 500px; max-width: 850px; width: 100%; }
-        
         .pokemon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; background: rgba(0,0,0,0.25); padding: 20px; border-radius: 35px; height: 75vh; overflow-y: scroll; scrollbar-width: none; border: 1px solid rgba(255,255,255,0.05); }
         .pokemon-grid::-webkit-scrollbar { display: none; }
-
         .pokemon-card { background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%); border-radius: 18px; cursor: pointer; padding: 12px 8px; border: 1px solid rgba(255,255,255,0.1); transition: transform 0.4s var(--bounce-ease), background 0.3s, border-color 0.3s; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.2; }
         .pokemon-card:hover { transform: scale(1.08) translateY(-5px); background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); z-index: 5; }
         .img-box { width: 80px; height: 80px; display: flex; justify-content: center; align-items: center; transition: 0.3s; }
@@ -219,13 +178,11 @@
         .used-p-bg { background: rgba(161, 112, 255, 0.3); backdrop-filter: grayscale(1) brightness(0.4) blur(2px); }
         .used-o-bg { background: rgba(255, 157, 82, 0.3); backdrop-filter: grayscale(1) brightness(0.4) blur(2px); }
         .used-label { color: #fff; font-size: 0.6rem; font-weight: 900; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); }
-
         .current-used { opacity: 0.1; filter: grayscale(1); pointer-events: none; transform: scale(0.9); }
-        
         .active-turn-slot { border: 2px solid #fff !important; box-shadow: 0 0 20px rgba(255, 255, 255, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3); animation: slot-focus-pulse 1.5s infinite ease-in-out !important; background: rgba(255, 255, 255, 0.2) !important; z-index: 10; }
         @keyframes slot-focus-pulse { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.03); filter: brightness(1.3); } }
         .ban-slot.active-turn-slot { border-color: var(--ban-red) !important; box-shadow: 0 0 20px rgba(255, 71, 71, 0.6); }
-        
+
         .footer-disclaimer { margin-top: 50px; padding: 20px; font-size: 0.5rem; color: rgba(255, 255, 255, 0.4); text-align: center; line-height: 1.6; width: 100%; border-top: 1px solid rgba(255, 255, 255, 0.05); }
 
         #ready-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 35px; backdrop-filter: blur(10px); transition: opacity 0.5s; }
@@ -242,19 +199,15 @@
     <h1 id="welcome-title">FEARLESS DRAFT</h1>
     
     <div class="role-card-container">
-        <div class="role-card solo" onclick="setRole('solo')">
+        <div class="cast-card green" onclick="setRole('solo')" id="card-solo">
             <div class="role-icon">🕹️</div>
             <h3>SOLO MODE</h3>
         </div>
-        <div class="role-card p" onclick="setRole('p')">
-            <div class="role-icon">🟣</div>
-            <h3>PURPLE TEAM</h3>
+        <div class="cast-card purple" onclick="setRole('p')" id="card-matching">
+            <div class="role-icon">🤝</div>
+            <h3>MATCHING MODE</h3>
         </div>
-        <div class="role-card o" onclick="setRole('o')">
-            <div class="role-icon">🟠</div>
-            <h3>ORANGE TEAM</h3>
-        </div>
-        <div class="role-card spec" onclick="setRole('spec')" id="card-spec">
+        <div class="cast-card blue" onclick="setRole('spec')" id="card-spec">
             <div class="role-icon">👁️</div>
             <h3>SPECTATOR</h3>
         </div>
@@ -381,7 +334,6 @@
     const db = firebase.database();
     let roomRef = null;
 
-    // 🌟 1. デバイスID（ブラウザ記憶）の生成と取得
     let deviceId = localStorage.getItem('fearlessDraftDeviceId');
     if (!deviceId) {
         deviceId = 'dev_' + Math.random().toString(36).substr(2, 9);
@@ -440,7 +392,6 @@
             document.getElementById('ready-status-container').style.display = 'flex';
             document.getElementById('countdown-display').style.display = 'none';
             
-            // 🌟 観戦モード（SPECTATOR）の場合は、準備ボタンを表示しない
             if (myRole === 'spec') {
                 btn.style.display = 'none';
                 document.getElementById('ready-title').innerText = "両チームの準備を待っています...";
@@ -475,7 +426,6 @@
                 document.getElementById('ready-overlay').style.display = 'none';
                 isCountingDown = false; isDraftActive = true; 
                 
-                // HOST または自分がソロの場合にタイマーをON
                 if (roomId && (myRole === hostRole || (hostRole === 'spec' && myRole === 'p'))) {
                     roomRef.update({ timerEnabled: true, timerPaused: false });
                 } else if (!roomId) {
@@ -486,15 +436,21 @@
         }, 1000);
     }
 
+    // 🌟 URL経由でアクセスしたゲスト向けのUI変更
     window.addEventListener('DOMContentLoaded', () => {
         if (roomId && hostRole) {
             document.getElementById('welcome-title').innerText = 'ONLINE MATCH: JOIN ROOM';
-            document.querySelector('.role-card.solo').style.display = 'none';
-            const hostCard = document.querySelector(`.role-card.${hostRole}`);
-            if (hostCard) {
-                hostCard.classList.add('locked');
-                hostCard.querySelector('h3').innerText += ' (HOST)';
-            }
+            
+            const matchCard = document.getElementById('card-matching');
+            const joinRole = hostRole === 'p' ? 'o' : 'p';
+            
+            // マッチングモードのカードを、参加するチーム（通常はオレンジ）に切り替え
+            matchCard.className = joinRole === 'o' ? 'cast-card orange' : 'cast-card purple';
+            matchCard.onclick = () => setRole(joinRole);
+            matchCard.innerHTML = `
+                <div class="role-icon">${joinRole === 'o' ? '🟠' : '🟣'}</div>
+                <h3>${joinRole === 'o' ? 'ORANGE TEAM' : 'PURPLE TEAM'}</h3>
+            `;
         }
     });
 
@@ -509,27 +465,28 @@
 
             const selector = document.getElementById('role-selector');
             selector.style.display = 'flex'; setTimeout(() => selector.style.opacity = '1', 10);
+            
+            document.querySelector('.role-card-container').style.display = 'flex';
             document.getElementById('invite-section').style.display = 'none';
-            document.querySelector('.role-card.solo').style.display = 'block';
             document.getElementById('welcome-title').innerText = 'FEARLESS DRAFT';
             
-            document.querySelectorAll('.role-card').forEach(c => {
-                c.classList.remove('selected', 'locked');
-                c.querySelector('h3').innerText = c.querySelector('h3').innerText.replace(' (HOST)', '');
-            });
+            // カードを初期状態（部屋作成モード）に戻す
+            const matchCard = document.getElementById('card-matching');
+            matchCard.className = 'cast-card purple';
+            matchCard.onclick = () => setRole('p'); 
+            matchCard.innerHTML = `
+                <div class="role-icon">🤝</div>
+                <h3>MATCHING MODE</h3>
+            `;
             
             document.getElementById('conn-p').style.display = 'none'; document.getElementById('conn-o').style.display = 'none';
             document.getElementById('ready-overlay').style.display = 'none';
         }
     }
 
-    // 🌟 役割を割り当てる共通関数
     function joinAs(role) {
         myRole = role;
-        document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
-        if (role !== 'solo') document.querySelector(`.role-card.${role}`).classList.add('selected');
-
-        if (role !== 'spec' && role !== 'solo') {
+        if (role !== 'spec' && role !== 'solo' && roomId) {
             const myStatusRef = db.ref(`rooms/${roomId}/players/${role}`);
             myStatusRef.set(true); myStatusRef.onDisconnect().set(false);
         }
@@ -538,13 +495,12 @@
 
     function setRole(role) {
         if (roomId) {
+            // URL経由（参加モード）の処理
             roomRef = db.ref('rooms/' + roomId);
             if (role === 'p' || role === 'o') {
-                // 🌟 デバイスIDによる排他制御（別デバイスからの乗っ取り防止）
                 db.ref(`rooms/${roomId}/devices/${role}`).once('value').then(snap => {
                     const existingId = snap.val();
                     if (!existingId || existingId === deviceId) {
-                        // 空き枠、または自分が以前確保した枠（リロード時）
                         if (!existingId) db.ref(`rooms/${roomId}/devices/${role}`).set(deviceId);
                         joinAs(role);
                     } else {
@@ -553,20 +509,22 @@
                     }
                 });
             } else {
-                // SPECTATORとして入る場合
                 joinAs(role);
             }
         } else {
+            // URLなし（新規作成モード）の処理
             if (role === 'solo') {
                 joinAs(role);
+            } else if (role === 'spec') {
+                alert("観戦(SPECTATOR)モードは、発行された招待リンクからアクセスした場合のみ利用できます。");
             } else {
+                // MATCHING MODE (role === 'p') の処理
                 roomId = Math.random().toString(36).substring(2, 8);
                 hostRole = role;
                 roomRef = db.ref('rooms/' + roomId);
 
-                // 初期デバイス設定
                 const initialDevices = {};
-                if (role === 'p' || role === 'o') initialDevices[role] = deviceId;
+                initialDevices[role] = deviceId;
 
                 roomRef.set({
                     hostRole: role, currentGame: 1, firstTeam: 'p',
@@ -574,18 +532,22 @@
                     timerEnabled: false, timerPaused: false,
                     players: { p: role === 'p', o: role === 'o' },
                     ready: { p: false, o: false },
-                    devices: initialDevices // デバイスIDを保存
+                    devices: initialDevices
                 }).then(() => {
-                    joinAs(role);
+                    // 🌟 修正：ここではまだ画面遷移(finishSetup)を呼ばない！
+                    myRole = role;
+                    const myStatusRef = db.ref(`rooms/${roomId}/players/${myRole}`);
+                    myStatusRef.set(true);
+                    myStatusRef.onDisconnect().set(false);
+                    setupFirebaseListener();
                 });
                 
                 const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}&host=${role}`;
                 document.getElementById('invite-url').value = inviteUrl;
-                document.getElementById('invite-section').style.display = 'flex';
-                document.querySelector('.role-card.solo').style.display = 'none';
                 
-                const otherTeam = role === 'p' ? 'o' : (role === 'o' ? 'p' : null);
-                if (otherTeam) document.querySelector(`.role-card.${otherTeam}`).classList.add('locked');
+                // カード選択画面を隠して招待URL画面を表示
+                document.querySelector('.role-card-container').style.display = 'none';
+                document.getElementById('invite-section').style.display = 'flex';
             }
         }
     }
@@ -599,10 +561,15 @@
         });
     }
 
-    function closeRoleSelector() { finishSetup(myRole); }
+    // 🌟 修正：招待画面の「ドラフト画面で待機する」を押した時に画面を切り替える
+    function closeRoleSelector() { 
+        finishSetup(myRole); 
+    }
+
     function finishSetup(role) {
         document.getElementById('role-selector').style.opacity = '0';
         setTimeout(() => document.getElementById('role-selector').style.display = 'none', 500);
+        
         const labels = {solo: '🕹️ SOLO MODE', p: '🟣 PURPLE TEAM', o: '🟠 ORANGE TEAM', spec: '👁️ SPECTATOR'};
         let displayStr = `MODE: ${labels[role]}`;
         if (roomId && role !== 'solo') displayStr += ` / ROOM: [${roomId}]`;
@@ -744,7 +711,6 @@
         grid.innerHTML = '';
         pokemonNames.forEach(name => {
             const card = document.createElement('div');
-            // 🌟 SPECTATORは強制的に readonly (触れない)
             const readonly = (myRole !== 'solo' && step && myRole !== step.t) || myRole === 'spec';
             card.className = `pokemon-card ${currentRoundUsed.has(name) ? 'current-used' : ''} ${readonly ? 'readonly' : ''}`;
             const pUsed = usedP.has(name), oUsed = usedO.has(name);
