@@ -199,7 +199,6 @@
         .order-badge { font-size: 0.9rem; padding: 4px 12px; border-radius: 50px; background: rgba(255,255,255,0.1); vertical-align: middle; margin-left: 8px; }
         .order-1st { background: #fff; color: #000; box-shadow: 0 0 10px #fff; }
 
-        /* 🌟 オンライン表示バッジのCSS */
         .conn-badge {
             font-size: 0.65rem; padding: 4px 10px; border-radius: 50px; margin-left: 10px;
             font-weight: 900; transition: 0.4s var(--bounce-ease); display: none; vertical-align: middle;
@@ -296,6 +295,25 @@
             width: 100%;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
+
+        /* 🌟 READYチェック・カウントダウン用のCSS */
+        #ready-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 50; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            border-radius: 35px; backdrop-filter: blur(10px); transition: opacity 0.5s;
+        }
+        .ready-status-text { font-size: 1.2rem; font-weight: 900; transition: 0.3s; }
+        .ready-btn {
+            margin-top: 40px; padding: 15px 40px; border-radius: 50px; background: #fff; color: #000; 
+            font-weight: 900; font-size: 1.1rem; cursor: pointer; border: none; transition: 0.3s; 
+            box-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+        .ready-btn:hover { transform: scale(1.05); }
+        .countdown-text {
+            font-size: 6rem; font-weight: 900; color: #fff; text-shadow: 0 0 30px rgba(255,255,255,0.5);
+            display: none; animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes pop-in { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -388,7 +406,20 @@
         </div>
     </div>
 
-    <div class="center-panel"><div class="pokemon-grid" id="pokemon-list"></div></div>
+    <div class="center-panel" style="position: relative;">
+        <div id="ready-overlay" style="display: none;">
+            <h2 id="ready-title" style="letter-spacing: 2px; margin-bottom: 10px;">ドラフト開始待機中...</h2>
+            <div id="ready-status-container" style="display: flex; gap: 40px; margin-top: 20px;">
+                <div id="ready-p" class="ready-status-text" style="color: var(--purple); opacity: 0.4;">🟣 PURPLE: 準備中</div>
+                <div id="ready-o" class="ready-status-text" style="color: var(--orange); opacity: 0.4;">🟠 ORANGE: 準備中</div>
+            </div>
+            <button id="my-ready-btn" class="ready-btn" onclick="toggleReady()">準備完了にする</button>
+            
+            <div id="countdown-display" class="countdown-text">3</div>
+        </div>
+
+        <div class="pokemon-grid" id="pokemon-list"></div>
+    </div>
 
     <div class="side-panel">
         <div class="team-box team-orange" id="panel-o">
@@ -437,9 +468,114 @@
     let currentGameNum = 1;
     let lastResetTimestamp = null; 
 
+    // 🌟 READY・カウントダウン用の変数
+    let isMyReady = false;
+    let isCountingDown = false;
+    let audioCtx = null;
+
     const urlParams = new URLSearchParams(window.location.search);
     let roomId = urlParams.get('room');
     let hostRole = urlParams.get('host');
+
+    // 🌟 優しい音を鳴らす関数（ボリューム0.05の微弱なサイン波）
+    function playGentleBeep(frequency, duration) {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.type = 'sine'; 
+        oscillator.frequency.value = frequency;
+        
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.05); // すごく小さい音
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + duration);
+    }
+
+    // 🌟 READYボタンのトグル処理
+    function toggleReady() {
+        if (myRole === 'none' || myRole === 'solo') return;
+        
+        // ユーザーアクションでAudioContextを初期化（ブラウザ制約回避）
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        isMyReady = !isMyReady;
+        const btn = document.getElementById('my-ready-btn');
+        if (isMyReady) {
+            btn.innerText = "準備完了！ (キャンセル)";
+            btn.style.background = "#4CAF50";
+            btn.style.color = "#fff";
+        } else {
+            btn.innerText = "準備完了にする";
+            btn.style.background = "#fff";
+            btn.style.color = "#000";
+        }
+        if (roomId) db.ref(`rooms/${roomId}/ready/${myRole}`).set(isMyReady);
+    }
+
+    // 🌟 UIのREADY状態をリセットする処理
+    function resetReadyUI() {
+        isMyReady = false;
+        isCountingDown = false;
+        const btn = document.getElementById('my-ready-btn');
+        btn.innerText = "準備完了にする";
+        btn.style.background = "#fff";
+        btn.style.color = "#000";
+        
+        if (myRole !== 'solo' && myRole !== 'none') {
+            document.getElementById('ready-overlay').style.display = 'flex';
+            document.getElementById('ready-title').style.display = 'block';
+            document.getElementById('ready-status-container').style.display = 'flex';
+            document.getElementById('my-ready-btn').style.display = 'block';
+            document.getElementById('countdown-display').style.display = 'none';
+        }
+    }
+
+    // 🌟 3秒カウントダウン処理
+    function startCountdown() {
+        isCountingDown = true;
+        document.getElementById('ready-title').style.display = 'none';
+        document.getElementById('ready-status-container').style.display = 'none';
+        document.getElementById('my-ready-btn').style.display = 'none';
+        
+        const cdDisplay = document.getElementById('countdown-display');
+        cdDisplay.style.display = 'block';
+        
+        let count = 3;
+        cdDisplay.innerText = count;
+        playGentleBeep(440, 0.4); 
+        
+        const interval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                cdDisplay.innerText = count;
+                cdDisplay.style.animation = 'none';
+                cdDisplay.offsetHeight; // reflow
+                cdDisplay.style.animation = 'pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                playGentleBeep(440, 0.4);
+            } else if (count === 0) {
+                cdDisplay.innerText = "START!";
+                playGentleBeep(523.25, 0.6); // 最後に少しだけ高い音
+            } else {
+                clearInterval(interval);
+                document.getElementById('ready-overlay').style.display = 'none';
+                isCountingDown = false;
+                
+                // ホスト側が自動的にタイマーをONにしてドラフト開始（同期ズレ防止）
+                if (myRole === hostRole && roomId) {
+                     roomRef.update({ timerEnabled: true });
+                }
+            }
+        }, 1000);
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
         if (roomId && hostRole) {
@@ -463,8 +599,8 @@
             roomId = null;
             hostRole = null;
             applyTimerToggleLocal(false);
+            resetReadyUI(); // 🌟 退出時にリセット
 
-            // 🌟 リロードせずにURLを綺麗にする
             window.history.pushState({}, document.title, window.location.pathname);
 
             const selector = document.getElementById('role-selector');
@@ -482,6 +618,7 @@
             
             document.getElementById('conn-p').style.display = 'none';
             document.getElementById('conn-o').style.display = 'none';
+            document.getElementById('ready-overlay').style.display = 'none';
         }
     }
 
@@ -494,8 +631,6 @@
 
         if (roomId) {
             roomRef = db.ref('rooms/' + roomId);
-            
-            // 🌟 ゲストのオンライン状態を確実にセット
             const myStatusRef = db.ref(`rooms/${roomId}/players/${myRole}`);
             myStatusRef.set(true);
             myStatusRef.onDisconnect().set(false);
@@ -510,15 +645,12 @@
                 hostRole = role;
                 roomRef = db.ref('rooms/' + roomId);
 
-                // 🌟 ホスト作成時に、最初から自分を「オンライン」としてデータベースに書き込む
                 roomRef.set({
                     hostRole: role, currentGame: 1, firstTeam: 'p',
                     names: { p: 'PURPLE', o: 'ORANGE' }, selections: [],
                     timerEnabled: false, timerPaused: false,
-                    players: {
-                        p: role === 'p',
-                        o: role === 'o'
-                    }
+                    players: { p: role === 'p', o: role === 'o' },
+                    ready: { p: false, o: false } // 🌟 部屋作成時にREADY情報を追加
                 }).then(() => {
                     const myStatusRef = db.ref(`rooms/${roomId}/players/${myRole}`);
                     myStatusRef.onDisconnect().set(false);
@@ -563,6 +695,7 @@
         if (role !== 'solo') {
             document.getElementById('conn-p').style.display = 'inline-block';
             document.getElementById('conn-o').style.display = 'inline-block';
+            resetReadyUI(); // 🌟 オンラインならオーバーレイを表示
         }
         
         initGrid();
@@ -573,13 +706,37 @@
             const data = snapshot.val();
             if (!data) return;
 
-            // 🌟 相手のオンライン状態を受け取ってバッジの見た目を変える
             if (data.players) {
                 updateConnectionUI('p', data.players.p);
                 updateConnectionUI('o', data.players.o);
             } else {
                 updateConnectionUI('p', false);
                 updateConnectionUI('o', false);
+            }
+
+            // 🌟 READY・カウントダウンの監視
+            if (data.ready && myRole !== 'solo') {
+                const rp = document.getElementById('ready-p');
+                const ro = document.getElementById('ready-o');
+                rp.style.opacity = data.ready.p ? "1" : "0.4";
+                rp.innerText = data.ready.p ? "🟣 PURPLE: READY!" : "🟣 PURPLE: 準備中";
+                ro.style.opacity = data.ready.o ? "1" : "0.4";
+                ro.innerText = data.ready.o ? "🟠 ORANGE: READY!" : "🟠 ORANGE: 準備中";
+
+                const overlay = document.getElementById('ready-overlay');
+                
+                // 両方READY＆まだカウントしてなければ開始
+                if (data.ready.p && data.ready.o && !isCountingDown && overlay.style.display !== 'none') {
+                    startCountdown();
+                } 
+                // どちらかのREADYが外れたらUIを戻す
+                else if ((!data.ready.p || !data.ready.o) && !isCountingDown) {
+                    overlay.style.display = 'flex';
+                    document.getElementById('ready-title').style.display = 'block';
+                    document.getElementById('ready-status-container').style.display = 'flex';
+                    document.getElementById('my-ready-btn').style.display = 'block';
+                    document.getElementById('countdown-display').style.display = 'none';
+                }
             }
 
             if (data.resetEvent) {
@@ -589,8 +746,8 @@
                     lastResetTimestamp = data.resetEvent.time;
                     if (data.resetEvent.by !== myRole && myRole !== 'none') {
                         setTimeout(() => {
-                            let msg = "⚠️ 対戦相手によって「現在の試合」がやり直しになりました。";
-                            if (data.resetEvent.type === 'all') msg = "⚠️ 対戦相手によって「全試合の履歴」がリセットされました。";
+                            let msg = "⚠️ 対戦相手によって「現在の試合」がやり直しになりました。再度準備完了を押してください。";
+                            if (data.resetEvent.type === 'all') msg = "⚠️ 対戦相手によって「全試合の履歴」がリセットされました。再度準備完了を押してください。";
                             if (data.resetEvent.type === 'swap') msg = "⚠️ 対戦相手によって「先攻・後攻」が入れ替えられ、試合がリセットされました。";
                             alert(msg);
                         }, 100);
@@ -640,7 +797,6 @@
         });
     }
 
-    // 🌟 OFFLINE表記の適用関数
     function updateConnectionUI(team, isOnline) {
         const badge = document.getElementById(`conn-${team}`);
         if (!badge) return;
@@ -868,6 +1024,7 @@
                 firstTeam: nextFirst, 
                 selections: [], 
                 timerPaused: false,
+                ready: { p: false, o: false }, // 🌟 やり直し時にREADYもリセット
                 resetEvent: { time: Date.now(), by: myRole, type: 'swap' } 
             });
         } else { 
@@ -887,6 +1044,7 @@
         turnIndex = 0; currentRoundUsed.clear(); isWaitingForPick = false; isPaused = false;
         document.querySelectorAll('.pick-slot').forEach((s, i) => { s.innerHTML = `Pick ${i+1}`; s.classList.remove('filled'); delete s.dataset.pokemon; }); 
         document.querySelectorAll('.ban-slot').forEach(s => s.innerHTML = ""); 
+        resetReadyUI(); // 🌟 ローカルリセット時もUIを戻す
         initGrid(); 
     }
     
@@ -896,6 +1054,7 @@
                 roomRef.update({ 
                     selections: [], 
                     timerPaused: false,
+                    ready: { p: false, o: false }, // 🌟 やり直し時にREADYもリセット
                     resetEvent: { time: Date.now(), by: myRole, type: 'current' } 
                 });
             } else resetCurrentDraftLocally();
@@ -907,7 +1066,10 @@
         document.querySelectorAll('#picks-orange .pick-slot').forEach(s => { if(s.dataset.pokemon) usedO.add(s.dataset.pokemon); });
         
         if (roomId) {
-            roomRef.update({ currentGame: num, selections: [], usedP: Array.from(usedP), usedO: Array.from(usedO), timerPaused: false });
+            roomRef.update({ 
+                currentGame: num, selections: [], usedP: Array.from(usedP), usedO: Array.from(usedO), timerPaused: false,
+                ready: { p: false, o: false } // 🌟 試合切り替え時もREADYをリセット
+            });
         } else {
             document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
             document.getElementById(`tab${num}`).classList.add('active'); resetCurrentDraftLocally();
@@ -919,6 +1081,7 @@
             if (roomId) {
                 roomRef.update({ 
                     currentGame: 1, firstTeam: 'p', selections: [], usedP: [], usedO: [], timerPaused: false,
+                    ready: { p: false, o: false }, // 🌟 リセット時にREADYもリセット
                     resetEvent: { time: Date.now(), by: myRole, type: 'all' } 
                 });
             } else {
