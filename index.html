@@ -26,7 +26,7 @@
         }
 
         @keyframes scene-in {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -39,9 +39,10 @@
                 radial-gradient(circle at 15% 15%, rgba(161, 112, 255, 0.12) 0%, transparent 45%),
                 radial-gradient(circle at 85% 85%, rgba(255, 157, 82, 0.08) 0%, transparent 45%),
                 linear-gradient(180deg, #05050a 0%, #020205 100%);
+            animation: scene-in 0.8s var(--ios-ease) forwards;
         }
 
-        /* --- モード選択画面 (刷新) --- */
+        /* --- モード選択画面：サイバーパンク・グリッチデザイン --- */
         #role-selector {
             position: fixed; inset: 0; 
             background: radial-gradient(circle at center, #0a0a1a 0%, #020205 100%);
@@ -49,34 +50,30 @@
             transition: opacity 0.5s var(--ios-ease);
         }
 
-        .selector-container {
+        .selector-inner {
             width: 100%; max-width: 1000px; text-align: center;
             animation: scene-in 0.8s var(--ios-ease) forwards;
         }
 
-        .tournament-logo {
-            margin-bottom: 40px;
-        }
+        .tournament-logo { margin-bottom: 30px; }
         .tournament-logo img {
             max-width: 320px; height: auto;
-            filter: drop-shadow(0 0 20px rgba(161, 112, 255, 0.5));
-            margin-bottom: 15px;
+            filter: drop-shadow(0 0 15px rgba(161, 112, 255, 0.4));
         }
 
         .glitch-title {
-            font-size: 3rem; font-weight: 900; letter-spacing: 10px; color: #fff;
-            position: relative; text-transform: uppercase; margin: 0;
+            font-size: 2.8rem; font-weight: 900; letter-spacing: 12px; color: #fff;
+            position: relative; text-transform: uppercase; margin-bottom: 50px;
         }
 
         .role-card-container { 
-            display: flex; gap: 25px; justify-content: center; margin-top: 20px;
+            display: flex; gap: 20px; justify-content: center; margin-top: 40px;
         }
 
-        /* モードカード (シャープ・グリッチ演出) */
         .mode-card {
-            position: relative; width: 280px; height: 160px;
+            position: relative; width: 260px; height: 160px;
             background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1);
-            cursor: pointer; overflow: hidden; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer; overflow: hidden; transition: 0.3s;
             display: flex; align-items: center; justify-content: center;
             clip-path: polygon(0 0, 90% 0, 100% 15%, 100% 100%, 10% 100%, 0 85%);
         }
@@ -84,46 +81,50 @@
         .mode-card::before {
             content: ""; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: 0.5s;
+            transition: 0.4s;
         }
 
         .mode-card:hover {
-            background: rgba(255,255,255,0.07);
-            transform: translateY(-8px) scale(1.02);
-            border-color: var(--purple);
-            box-shadow: 0 10px 30px rgba(161, 112, 255, 0.3);
+            background: rgba(255,255,255,0.08); border-color: var(--purple);
+            transform: translateY(-5px); box-shadow: 0 10px 30px rgba(161, 112, 255, 0.3);
         }
-
         .mode-card:hover::before { left: 100%; }
 
+        /* ホバー時のグリッチ演出 */
+        @keyframes glitch-offset {
+            0% { clip-path: inset(10% 0 30% 0); transform: translate(-2px, 2px); }
+            20% { clip-path: inset(40% 0 10% 0); transform: translate(2px, -2px); }
+            40% { clip-path: inset(80% 0 5% 0); transform: translate(-1px, 1px); }
+            100% { clip-path: inset(10% 0 30% 0); transform: translate(0,0); }
+        }
+        .mode-card:hover .mode-label { animation: glitch-offset 0.3s infinite linear; text-shadow: 2px 0 var(--ban-red), -2px 0 var(--spec-cyan); }
+
+        .mode-content { z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .mode-icon { font-size: 2.5rem; }
+        .mode-label { font-size: 1.2rem; font-weight: 900; letter-spacing: 2px; }
+        .mode-desc { font-size: 0.7rem; color: #888; letter-spacing: 1px; }
+
+        /* 特殊なチームカラー */
         .mode-card.orange:hover { border-color: var(--orange); box-shadow: 0 10px 30px rgba(255, 157, 82, 0.3); }
         .mode-card.spec:hover { border-color: var(--spec-cyan); box-shadow: 0 10px 30px rgba(0, 229, 255, 0.3); }
 
-        .mode-content { z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .mode-icon { font-size: 2.8rem; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); }
-        .mode-label { font-size: 1.3rem; font-weight: 900; letter-spacing: 3px; }
-        .mode-desc { font-size: 0.75rem; color: #888; letter-spacing: 1px; }
-
-        /* 招待リンク画面 */
         .invite-container {
-            margin-top: 40px; padding: 30px; background: rgba(161, 112, 255, 0.05);
-            border-top: 2px solid var(--purple); border-bottom: 2px solid var(--purple);
+            margin-top: 50px; padding: 30px; background: rgba(161, 112, 255, 0.05);
+            border-top: 1px solid var(--purple); border-bottom: 1px solid var(--purple);
             display: none; flex-direction: column; align-items: center;
-            animation: scene-in 0.5s var(--ios-ease);
+            animation: scene-in 0.6s var(--bounce-ease) forwards; backdrop-filter: blur(10px);
         }
-        .invite-box { display: flex; gap: 10px; margin-top: 20px; margin-bottom: 25px; }
-        .invite-input { background: #000; border: 1px solid var(--purple); color: #fff; padding: 12px 20px; width: 400px; font-family: monospace; outline: none; text-align: center; }
-        .copy-btn { background: var(--purple); color: white; border: none; padding: 0 25px; cursor: pointer; font-weight: 800; transition: 0.3s; }
+        .invite-box { display: flex; gap: 10px; margin-top: 15px; margin-bottom: 20px; }
+        .invite-input { background: #000; border: 1px solid var(--purple); color: #fff; padding: 12px 15px; width: 400px; font-family: monospace; outline: none; text-align: center; }
+        .copy-btn { background: var(--purple); color: white; border: none; padding: 0 20px; cursor: pointer; font-weight: 800; transition: 0.3s; }
         .copy-btn:hover { filter: brightness(1.2); }
-        
         .start-btn-cyber {
-            background: #fff; color: #000; border: none; padding: 15px 50px; 
-            font-weight: 900; font-size: 1.1rem; cursor: pointer; transition: 0.3s;
-            clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%);
+            background: #fff; color: #000; border: none; padding: 15px 50px; cursor: pointer; font-weight: 900; 
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); transition: 0.3s;
         }
         .start-btn-cyber:hover { transform: scale(1.05); background: var(--purple); color: #fff; }
 
-        /* --- メイン画面の既存スタイル --- */
+        /* --- メインコンテンツの既存デザイン --- */
         .header-section { width: 96%; max-width: 1200px; background: var(--glass); backdrop-filter: blur(25px); padding: 24px; border-radius: 30px; margin-bottom: 24px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .game-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
         .game-tabs button { padding: 10px 24px; border: none; border-radius: 12px; background: rgba(255,255,255,0.06); color: #888; cursor: pointer; font-weight: 800; transition: all 0.3s var(--ios-ease); }
@@ -140,7 +141,6 @@
         .status-bar { font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; }
         .timer-display { font-size: 2.8rem; font-weight: 900; color: var(--timer-gold); min-width: 120px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
         .timer-urgent { animation: heartbeat 1s infinite; color: var(--ban-red) !important; }
-        @keyframes heartbeat { 0% { transform: scale(1); } 15% { transform: scale(1.1); } 30% { transform: scale(1); } 45% { transform: scale(1.15); } 100% { transform: scale(1); } }
 
         .main-layout { display: flex; width: 98%; max-width: 1600px; justify-content: center; gap: 24px; padding: 0 20px; box-sizing: border-box; }
         .side-panel { width: 340px; flex-shrink: 0; }
@@ -150,6 +150,7 @@
 
         .ban-group { display: flex; gap: 10px; margin-bottom: 25px; }
         .ban-slot { flex: 1; aspect-ratio: 1/1; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .ban-slot img { width: 75%; height: 75%; object-fit: contain; }
         .ban-label { position: absolute; bottom: 0; width: 100%; background: var(--ban-red); color: white; font-size: 0.65rem; text-align: center; font-weight: 900; padding: 3px 0; z-index: 2; }
 
         .pick-slot { height: 70px; background: rgba(255,255,255,0.04); margin: 12px 0; border-radius: 20px; display: flex; align-items: center; padding: 0 18px; font-weight: 800; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.05); }
@@ -160,11 +161,11 @@
         .pokemon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; background: rgba(0,0,0,0.25); padding: 20px; border-radius: 35px; height: 75vh; overflow-y: scroll; scrollbar-width: none; border: 1px solid rgba(255,255,255,0.05); }
         .pokemon-card { background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%); border-radius: 18px; cursor: pointer; padding: 12px 8px; border: 1px solid rgba(255,255,255,0.1); transition: 0.4s var(--bounce-ease); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.2; }
         .pokemon-card:hover { transform: scale(1.08) translateY(-5px); background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); z-index: 5; }
-        .pokemon-card .name { font-size: 0.75rem; font-weight: 900; margin-top: 8px; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pokemon-card .name { font-size: 0.75rem; font-weight: 900; color: #ffffff; margin-top: 8px; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pokemon-card.readonly { cursor: not-allowed; filter: grayscale(0.9) opacity(0.3); pointer-events: none; }
 
         .status-overlay { position: absolute; inset: 0; display: flex; z-index: 10; pointer-events: none; border-radius: 18px; overflow: hidden; }
-        .status-p, .status-o { flex: 1; height: 100%; opacity: 0; transition: 0.4s; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 10px; }
+        .status-p, .status-o { flex: 1; height: 100%; transition: 0.4s; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 10px; opacity: 0; }
         .used-p-bg { background: rgba(161, 112, 255, 0.3); backdrop-filter: grayscale(1) brightness(0.4) blur(2px); opacity: 1; }
         .used-o-bg { background: rgba(255, 157, 82, 0.3); backdrop-filter: grayscale(1) brightness(0.4) blur(2px); opacity: 1; }
         .used-label { color: #fff; font-size: 0.6rem; font-weight: 900; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); }
@@ -177,7 +178,7 @@
         .countdown-text { font-size: 6rem; font-weight: 900; color: #fff; display: none; }
 
         .footer-disclaimer { margin-top: 50px; padding: 20px; font-size: 0.5rem; color: rgba(255, 255, 255, 0.4); text-align: center; line-height: 1.6; width: 100%; border-top: 1px solid rgba(255, 255, 255, 0.05); }
-        .editable-name { cursor: text; padding: 2px 8px; border-radius: 8px; border: 1px solid transparent; outline: none; }
+        .editable-name { display: inline-block; cursor: text; padding: 2px 8px; border-radius: 8px; outline: none; }
         .order-badge { font-size: 0.9rem; padding: 4px 12px; border-radius: 50px; background: rgba(255,255,255,0.1); margin-left: 8px; }
         .order-1st { background: #fff; color: #000; }
         .conn-badge { font-size: 0.65rem; padding: 4px 10px; border-radius: 50px; margin-left: 10px; font-weight: 900; display: none; }
@@ -188,32 +189,32 @@
 <body>
 
 <div id="role-selector">
-    <div class="selector-container">
+    <div class="selector-inner">
         <div class="tournament-logo">
             <img src="img/ユナクラ杯.png" alt="ユナクラ杯" onerror="this.style.display='none';">
             <h1 class="glitch-title">FEARLESS DRAFT</h1>
         </div>
         
-        <div class="role-card-container" id="mode-cards">
+        <div class="role-card-container" id="mode-cards-wrapper">
             <div class="mode-card" onclick="setRole('solo')">
                 <div class="mode-content">
                     <span class="mode-icon">🕹️</span>
-                    <span class="mode-label">SINGLE</span>
-                    <span class="mode-desc">1人で操作する</span>
+                    <span class="mode-label">SINGLE MODE</span>
+                    <span class="mode-desc">1人で全操作を行う</span>
                 </div>
             </div>
             <div class="mode-card" onclick="setRole('p')">
                 <div class="mode-content">
                     <span class="mode-icon">⚔️</span>
-                    <span class="mode-label">VERSUS</span>
-                    <span class="mode-desc">対戦URLを発行する</span>
+                    <span class="mode-label">VERSUS MODE</span>
+                    <span class="mode-desc">URLを発行して対戦する</span>
                 </div>
             </div>
         </div>
 
         <div id="invite-section" class="invite-container">
-            <h2 style="margin: 0; color: var(--purple); letter-spacing: 2px;">INVITATION READY</h2>
-            <p style="font-size: 0.8rem; color: #aaa; margin: 10px 0 0 0;">参加チーム・実況者に以下のURLを共有してください</p>
+            <h2 style="margin: 0; color: var(--purple); letter-spacing: 2px; font-weight: 900;">INVITATION READY</h2>
+            <p style="font-size: 0.8rem; color: #aaa; margin: 10px 0 0 0;">参加チーム・実況者にこのURLを共有してください</p>
             <div class="invite-box">
                 <input type="text" id="invite-url" class="invite-input" readonly>
                 <button class="copy-btn" onclick="copyInviteLink()">COPY</button>
@@ -236,24 +237,25 @@
         <div style="display: flex; gap: 20px; align-items: center;">
             <button class="swap-btn" onclick="toggleFirstPick()">⇄ 先攻切り替え</button>
             <div class="timer-controls">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 800;">
-                    <input type="checkbox" id="timer-toggle" onchange="handleTimerToggle()" style="transform: scale(1.3);"> タイマー
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 800; font-size: 0.85rem;">
+                    <input type="checkbox" id="timer-toggle" onchange="handleTimerToggle()" style="transform: scale(1.3);"> タイマー有効
                 </label>
                 <button id="timer-stop-btn" class="stop-btn" onclick="toggleTimerPause()" disabled>ストップ</button>
             </div>
         </div>
         <div style="display: flex; gap: 25px; margin-top: 5px;">
-            <button class="reset-btn" style="background:none; border:none; color:#888; cursor:pointer;" onclick="resetCurrentGame()">やり直し</button>
-            <button class="reset-btn" style="background:none; border:none; color:var(--ban-red); cursor:pointer;" onclick="resetAll()">全試合リセット</button>
+            <button class="reset-btn" style="background:none; border:none; color:#888; cursor:pointer;" onclick="resetCurrentGame()">現在の試合をやり直す</button>
+            <button class="reset-btn" style="background:none; border:none; color:var(--ban-red); cursor:pointer;" onclick="resetAll()">全試合をリセット</button>
         </div>
-        <div style="display: flex; align-items: center; margin-top: 5px;">
-            <div id="my-role-display" style="font-size: 0.75rem; color: #aaa; background: rgba(255,255,255,0.08); padding: 4px 15px; border-radius: 50px;">MODE: --</div>
-            <button class="leave-btn" onclick="leaveRoom()">🔙 退出</button>
+        
+        <div style="display: flex; align-items: center; justify-content: center; margin-top: 5px;">
+            <div id="my-role-display" style="font-size: 0.75rem; color: #aaa; background: rgba(255,255,255,0.08); padding: 4px 15px; border-radius: 50px; font-weight: bold; letter-spacing: 1px;">MODE: --</div>
+            <button class="leave-btn" onclick="leaveRoom()">🔙 退出・モード変更</button>
         </div>
     </div>
 
     <div class="status-container">
-        <div class="status-bar" id="status-msg">WAITING...</div>
+        <div class="status-bar" id="status-msg">WAITING FOR DRAFT</div>
         <div class="timer-display" id="timer">--</div>
     </div>
 </div>
@@ -283,7 +285,7 @@
 
     <div class="center-panel" style="position: relative;">
         <div id="ready-overlay" style="display: none;">
-            <h2 id="ready-title" style="letter-spacing: 2px;">READY CHECK</h2>
+            <h2 id="ready-title" style="letter-spacing: 2px; margin-bottom: 10px;">ドラフト開始待機中...</h2>
             <div id="ready-status-container" style="display: flex; gap: 40px; margin-top: 20px;">
                 <div id="ready-p" style="color: var(--purple); font-weight: 900;">🟣 PURPLE: 準備中</div>
                 <div id="ready-o" style="color: var(--orange); font-weight: 900;">🟠 ORANGE: 準備中</div>
@@ -317,13 +319,7 @@
     </div>
 </div>
 
-<footer class="footer-disclaimer">
-    <p>&copy;2026 Developed by kirimi | ユナクラ杯 非公式ツール</p>
-    <p>当サイトはファンコンテンツであり、任天堂・ポケモン・テンセント等とは関係ありません。</p>
-</footer>
-
 <script>
-    /* --- Firebase設定 --- */
     const firebaseConfig = {
       apiKey: "AIzaSyCTb7Db3ZN-qhCaPrqwfymMG5BTQH_Wpgs",
       authDomain: "unite-fearlessdraft-tool.firebaseapp.com",
@@ -340,26 +336,38 @@
     let deviceId = localStorage.getItem('fearlessDraftDeviceId') || 'dev_' + Math.random().toString(36).substr(2, 9);
     localStorage.setItem('fearlessDraftDeviceId', deviceId);
 
-    /* --- データ定義 --- */
     const pokemonNames = ["アローラキュウコン", "アローラライチュウ", "インテレオン", "ウッウ", "エースバーン", "エーフィ", "グレイシア", "グレンアルマ", "ゲッコウガ", "サーナイト", "シャンデラ", "ジュナイパー", "ジュラルドン", "ドラパルト", "ニンフィア", "ピカチュウ", "フシギバナ", "マフォクシー", "ミュウ", "ミュウツーY", "ミライドン", "ラティオス", "イワパレス", "オーロット", "カビゴン", "カメックス", "シャワーズ", "ヌメルゴン", "ブラッキー", "ホウオウ", "マンムー", "ヤドラン", "ヨクバリス", "ラプラス", "アブソル", "ガラルギャロップ", "ゲンガー", "ゼラオラ", "ゾロアーク", "ダークライ", "ドードリオ", "ニャース", "ファイアロー", "マスカーニャ", "リーフィア", "アマージョ", "ウーラオス", "エンペルト", "カイリキー", "カイリュー", "ガブリアス", "ギャラドス", "メガギャラドス", "ギルガルド", "ザシアン", "スイクン", "ソウブレイズ", "ダダリン", "タイレーツ", "デカヌチャン", "ネギガナイト", "パーモット", "バシャーモ", "ハッサム", "バンギラス", "マッシブーン", "マリルリ", "ミミッキュ", "ミュウツーX", "メタグロス", "リザードン", "メガリザードンX", "メガリザードンY", "ルカリオ", "メガルカリオ", "キュワワー", "コダック", "ハピナス", "バリヤード", "ピクシー", "フーパ", "プクリン", "マホイップ", "ヤミラミ", "ラティアス", "ワタシラガ"];
     let usedP = new Set(), usedO = new Set(), currentRoundUsed = new Set();
     let turnIndex = 0, firstTeam = 'p', timeLeft = 0, timerInterval = null;
     let isWaitingForPick = false, isPaused = false, isTimerEnabled = false; 
-    let myRole = 'none', currentGameNum = 1;
-    let isMyReady = false, isDraftActive = false, audioCtx = null;
+    let myRole = 'none', currentGameNum = 1, lastResetTimestamp = null; 
+    let isMyReady = false, isCountingDown = false, isDraftActive = false, audioCtx = null;
 
     const urlParams = new URLSearchParams(window.location.search);
     let roomId = urlParams.get('room');
     let hostRole = urlParams.get('host');
 
-    /* --- 初期化処理 --- */
+    // --- 音声演出 ---
+    function playGentleBeep(frequency, duration) {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.type = 'sine'; oscillator.frequency.value = frequency;
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.05); 
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+        oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
+        oscillator.start(); oscillator.stop(audioCtx.currentTime + duration);
+    }
+
+    // --- 初期表示：モードカードの出し分け ---
     window.addEventListener('DOMContentLoaded', () => {
         if (roomId && hostRole) {
-            // ② 招待された側の画面（オレンジか観戦のみ表示）
             const joinRole = hostRole === 'p' ? 'o' : 'p';
-            const wrapper = document.getElementById('mode-cards');
+            const wrapper = document.getElementById('mode-cards-wrapper');
             wrapper.innerHTML = `
-                <div class="mode-card orange" onclick="setRole('${joinRole}')">
+                <div class="mode-card ${joinRole === 'o' ? 'orange' : 'purple'}" onclick="setRole('${joinRole}')">
                     <div class="mode-content">
                         <span class="mode-icon">${joinRole === 'o' ? '🟠' : '🟣'}</span>
                         <span class="mode-label">TEAM ${joinRole.toUpperCase()}</span>
@@ -370,14 +378,14 @@
                     <div class="mode-content">
                         <span class="mode-icon">👁️</span>
                         <span class="mode-label">SPECTATOR</span>
-                        <span class="mode-desc">観客として参加する</span>
+                        <span class="mode-desc">観戦モードで入室する</span>
                     </div>
                 </div>
             `;
         }
     });
 
-    /* --- ロール設定 & 通信開始 --- */
+    // --- ロール設定 ---
     function setRole(role) {
         if (roomId) {
             roomRef = db.ref('rooms/' + roomId);
@@ -388,7 +396,7 @@
                         if (!existingId) db.ref(`rooms/${roomId}/devices/${role}`).set(deviceId);
                         joinAs(role);
                     } else {
-                        alert("⚠️ この席は既に埋まっています。観客モードへ切り替えます。");
+                        alert("⚠️ このチームはすでに他のプレイヤーが参加しています。観戦モードで入室します。");
                         joinAs('spec');
                     }
                 });
@@ -396,13 +404,14 @@
         } else {
             if (role === 'solo') joinAs(role);
             else {
-                // 対戦URL発行
+                // VERSUS: URL発行
                 roomId = Math.random().toString(36).substring(2, 8);
                 hostRole = role;
                 roomRef = db.ref('rooms/' + roomId);
                 roomRef.set({
                     hostRole: role, currentGame: 1, firstTeam: 'p',
                     names: { p: 'PURPLE', o: 'ORANGE' }, selections: [],
+                    timerEnabled: false, timerPaused: false,
                     players: { p: role === 'p', o: role === 'o' },
                     ready: { p: false, o: false },
                     devices: { [role]: deviceId }
@@ -412,10 +421,8 @@
                     db.ref(`rooms/${roomId}/players/${myRole}`).onDisconnect().set(false);
                     setupFirebaseListener();
                 });
-                
-                const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}&host=${role}`;
-                document.getElementById('invite-url').value = inviteUrl;
-                document.getElementById('mode-cards').style.display = 'none';
+                document.getElementById('invite-url').value = `${window.location.origin}${window.location.pathname}?room=${roomId}&host=${role}`;
+                document.getElementById('mode-cards-wrapper').style.display = 'none';
                 document.getElementById('invite-section').style.display = 'flex';
             }
         }
@@ -425,8 +432,8 @@
         myRole = role;
         if (roomId) {
             if (role !== 'spec') {
-                db.ref(`rooms/${roomId}/players/${role}`).set(true);
-                db.ref(`rooms/${roomId}/players/${role}`).onDisconnect().set(false);
+                const myStatusRef = db.ref(`rooms/${roomId}/players/${role}`);
+                myStatusRef.set(true); myStatusRef.onDisconnect().set(false);
             }
             setupFirebaseListener();
         }
@@ -436,7 +443,8 @@
     function finishSetup(role) {
         document.getElementById('role-selector').style.opacity = '0';
         setTimeout(() => document.getElementById('role-selector').style.display = 'none', 500);
-        document.getElementById('my-role-display').innerText = `MODE: ${role.toUpperCase()}` + (roomId ? ` [ROOM: ${roomId}]` : '');
+        const labels = {solo: '🕹️ SOLO', p: '🟣 PURPLE', o: '🟠 ORANGE', spec: '👁️ SPECTATOR'};
+        document.getElementById('my-role-display').innerText = `MODE: ${labels[role]}` + (roomId ? ` [ROOM: ${roomId}]` : '');
         if (role !== 'solo') {
             document.getElementById('conn-p').style.display = 'inline-block';
             document.getElementById('conn-o').style.display = 'inline-block';
@@ -445,7 +453,56 @@
         initGrid();
     }
 
-    /* --- ドラフトロジック --- */
+    // --- Firebase監視ロジック ---
+    function setupFirebaseListener() {
+        roomRef.on('value', snapshot => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            if (data.players) {
+                updateConnectionUI('p', data.players.p); updateConnectionUI('o', data.players.o);
+            }
+
+            // 準備状況
+            if (data.ready && myRole !== 'solo') {
+                document.getElementById('ready-p').innerText = `🟣 PURPLE: ${data.ready.p ? 'READY!' : '準備中'}`;
+                document.getElementById('ready-o').innerText = `🟠 ORANGE: ${data.ready.o ? 'READY!' : '準備中'}`;
+                if (data.ready.p && data.ready.o && !isDraftActive && !isCountingDown) {
+                    if (turnIndex === 0 && (!data.selections || data.selections.length === 0)) startCountdown();
+                    else { document.getElementById('ready-overlay').style.display = 'none'; isDraftActive = true; }
+                } else if (!data.ready.p || !data.ready.o) {
+                    isDraftActive = false; document.getElementById('ready-overlay').style.display = 'flex';
+                }
+            }
+
+            // 名前同期
+            if (data.names) {
+                const np = document.getElementById('name-p'), no = document.getElementById('name-o');
+                if (document.activeElement !== np) np.innerText = data.names.p;
+                if (document.activeElement !== no) no.innerText = data.names.o;
+            }
+
+            // 先攻切り替え
+            if (data.firstTeam && data.firstTeam !== firstTeam) {
+                firstTeam = data.firstTeam; updateBadges(); if (turnIndex === 0) initGrid();
+            }
+
+            // セレクション同期
+            const newSelections = data.selections || [];
+            while (turnIndex < newSelections.length) { executeSelectionLocally(newSelections[turnIndex]); }
+            
+            // ゲーム変更
+            if (data.currentGame && data.currentGame !== currentGameNum) {
+                currentGameNum = data.currentGame;
+                usedP = new Set(data.usedP || []); usedO = new Set(data.usedO || []);
+                document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
+                document.getElementById(`tab${currentGameNum}`).classList.add('active');
+                resetCurrentDraftLocally();
+            }
+        });
+    }
+
+    // --- ドラフト実行コア ---
     function getSequence() {
         const p1 = firstTeam, p2 = (firstTeam === 'p' ? 'o' : 'p');
         return [
@@ -467,14 +524,13 @@
             const card = document.createElement('div');
             const readonly = (myRole !== 'solo' && step && myRole !== step.t) || myRole === 'spec';
             card.className = `pokemon-card ${currentRoundUsed.has(name) ? 'current-used' : ''} ${readonly ? 'readonly' : ''}`;
-            
             const pUsed = usedP.has(name), oUsed = usedO.has(name);
             card.innerHTML = `
                 <div class="status-overlay">
                     <div class="status-p ${pUsed ? 'used-p-bg' : ''}">${pUsed ? '<span class="used-label">USED</span>' : ''}</div>
                     <div class="status-o ${oUsed ? 'used-o-bg' : ''}">${oUsed ? '<span class="used-label">USED</span>' : ''}</div>
                 </div>
-                <img src="img/${name}.png" style="width:80px;height:80px;object-fit:contain;" onerror="this.style.opacity='0.2';">
+                <div class="img-box"><img src="img/${name}.png" onerror="this.style.opacity='0.2';"></div>
                 <div class="name">${name}</div>`;
             if (!readonly) card.onclick = () => handleSelect(name);
             grid.appendChild(card);
@@ -486,68 +542,57 @@
         const step = getSequence()[turnIndex];
         if (!step || currentRoundUsed.has(name) || myRole === 'spec') return;
         if (step.m === 'P' && ((step.t === 'p' && usedP.has(name)) || (step.t === 'o' && usedO.has(name)))) return;
-        
-        if (roomId) {
-            roomRef.child('selections').child(turnIndex).set(name);
-            roomRef.update({ timerPaused: false });
-        } else executeSelectionLocally(name);
+        if (roomId) { roomRef.child('selections').child(turnIndex).set(name); roomRef.update({ timerPaused: false }); } 
+        else executeSelectionLocally(name);
     }
 
     function executeSelectionLocally(name) {
         const step = getSequence()[turnIndex];
         if (!step) return;
         if (name === 'TIMEOUT' && step.m === 'B') {
-            document.getElementById(`${step.t}-ban-${step.i}`).innerHTML = `<div style="color:red;font-size:0.6rem;">NO BAN</div>`;
+            document.getElementById(`${step.t}-ban-${step.i}`).innerHTML = `<div class="ban-none">🚫</div>`;
         } else if (step.m === 'B') {
-            document.getElementById(`${step.t}-ban-${step.i}`).innerHTML = `<img src="img/${name}.png" style="width:75%;"><div class="ban-label">${name}</div>`;
+            document.getElementById(`${step.t}-ban-${step.i}`).innerHTML = `<img src="img/${name}.png"><div class="ban-label">${name}</div>`;
         } else {
             const slot = document.getElementById(`${step.t}-pick-${step.i}`);
-            slot.classList.add('filled');
-            slot.innerHTML = `<img src="img/${name}.png"> <span>${name}</span>`;
+            slot.classList.add('filled'); slot.innerHTML = `<img src="img/${name}.png"> <span>${name}</span>`;
             slot.dataset.pokemon = name;
         }
-        currentRoundUsed.add(name);
-        turnIndex++;
-        initGrid();
+        currentRoundUsed.add(name); isWaitingForPick = false; turnIndex++; initGrid();
     }
 
-    /* --- Firebase監視 --- */
-    function setupFirebaseListener() {
-        roomRef.on('value', snap => {
-            const data = snap.val();
-            if (!data) return;
-
-            // 名前同期
-            const np = document.getElementById('name-p'), no = document.getElementById('name-o');
-            if (data.names) {
-                if (document.activeElement !== np) np.innerText = data.names.p;
-                if (document.activeElement !== no) no.innerText = data.names.o;
-            }
-
-            // 準備状況
-            if (data.ready) {
-                document.getElementById('ready-p').innerText = `🟣 PURPLE: ${data.ready.p ? 'READY!' : '準備中'}`;
-                document.getElementById('ready-o').innerText = `🟠 ORANGE: ${data.ready.o ? 'READY!' : '準備中'}`;
-                if (data.ready.p && data.ready.o && !isDraftActive) startCountdown();
-            }
-
-            // 先攻後攻
-            if (data.firstTeam !== firstTeam) {
-                firstTeam = data.firstTeam;
-                updateBadges();
-                if (turnIndex === 0) initGrid();
-            }
-
-            // セレクション
-            const newSels = data.selections || [];
-            while (turnIndex < newSels.length) executeSelectionLocally(newSels[turnIndex]);
-        });
+    // --- 各種UI操作 ---
+    function toggleReady() {
+        if (myRole === 'none' || myRole === 'solo' || myRole === 'spec') return;
+        isMyReady = !isMyReady;
+        document.getElementById('my-ready-btn').innerText = isMyReady ? "READY解除" : "準備完了にする";
+        if (roomId) db.ref(`rooms/${roomId}/ready/${myRole}`).set(isMyReady);
     }
 
-    /* --- タイマー系 --- */
+    function startCountdown() {
+        isCountingDown = true;
+        const cd = document.getElementById('countdown-display');
+        cd.style.display = 'block';
+        let count = 3;
+        const interval = setInterval(() => {
+            cd.innerText = count > 0 ? count : "START!"; playGentleBeep(440, 0.4);
+            if (count < 0) {
+                clearInterval(interval); document.getElementById('ready-overlay').style.display = 'none';
+                isCountingDown = false; isDraftActive = true; highlightTurn();
+            }
+            count--;
+        }, 1000);
+    }
+
+    function updateBadges() {
+        document.getElementById('badge-p').innerText = firstTeam === 'p' ? '先攻' : '後攻';
+        document.getElementById('badge-p').className = firstTeam === 'p' ? 'order-badge order-1st' : 'order-badge';
+        document.getElementById('badge-o').innerText = firstTeam === 'o' ? '先攻' : '後攻';
+        document.getElementById('badge-o').className = firstTeam === 'o' ? 'order-badge order-1st' : 'order-badge';
+    }
+
     function handleTimerToggle() {
         isTimerEnabled = document.getElementById('timer-toggle').checked;
-        document.getElementById('timer-stop-btn').disabled = !isTimerEnabled;
         if (roomId) roomRef.update({ timerEnabled: isTimerEnabled });
         highlightTurn();
     }
@@ -555,24 +600,12 @@
     function startTimer(seconds) {
         clearInterval(timerInterval);
         if (!isTimerEnabled || seconds <= 0) return;
-        timeLeft = seconds;
-        updateTimerDisplay();
-        timerInterval = setInterval(() => {
-            if (!isPaused) {
-                timeLeft--;
-                updateTimerDisplay();
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    handleTimeout();
-                }
-            }
-        }, 1000);
+        timeLeft = seconds; updateTimerDisplay();
+        timerInterval = setInterval(() => { if(!isPaused) { timeLeft--; updateTimerDisplay(); if(timeLeft<=0) handleTimeout(); }}, 1000);
     }
 
     function updateTimerDisplay() {
-        const d = document.getElementById('timer');
-        d.innerText = timeLeft;
-        d.className = "timer-display" + (timeLeft <= 5 ? " timer-urgent" : "");
+        document.getElementById('timer').innerText = timeLeft;
     }
 
     function handleTimeout() {
@@ -583,51 +616,49 @@
         }
     }
 
-    /* --- ユーティリティ --- */
-    function toggleReady() {
-        isMyReady = !isMyReady;
-        document.getElementById('my-ready-btn').innerText = isMyReady ? "READY解除" : "準備完了にする";
-        if (roomId) db.ref(`rooms/${roomId}/ready/${myRole}`).set(isMyReady);
-    }
-
-    function startCountdown() {
-        isDraftActive = true;
-        document.getElementById('countdown-display').style.display = 'block';
-        let count = 3;
-        const cd = setInterval(() => {
-            document.getElementById('countdown-display').innerText = count;
-            if (count <= 0) {
-                clearInterval(cd);
-                document.getElementById('ready-overlay').style.display = 'none';
-                highlightTurn();
-            }
-            count--;
-        }, 1000);
-    }
-
-    function updateBadges() {
-        document.getElementById('badge-p').className = firstTeam === 'p' ? 'order-badge order-1st' : 'order-badge';
-        document.getElementById('badge-p').innerText = firstTeam === 'p' ? '先攻' : '後攻';
-        document.getElementById('badge-o').className = firstTeam === 'o' ? 'order-badge order-1st' : 'order-badge';
-        document.getElementById('badge-o').innerText = firstTeam === 'o' ? '先攻' : '後攻';
+    function highlightTurn() {
+        const sequence = getSequence(), step = sequence[turnIndex];
+        document.querySelectorAll('.team-box').forEach(b => b.classList.remove('active-team'));
+        if (step) {
+            document.getElementById(`panel-${step.t}`).classList.add('active-team');
+            document.getElementById('status-msg').innerText = `${step.t === 'p' ? 'PURPLE' : 'ORANGE'} ${step.m === 'B' ? 'BANNING' : 'PICKING'}`;
+            if (isDraftActive) startTimer(step.time);
+        }
     }
 
     function toggleFirstPick() {
-        firstTeam = firstTeam === 'p' ? 'o' : 'p';
-        if (roomId) roomRef.update({ firstTeam: firstTeam });
-        updateBadges();
+        const next = firstTeam === 'p' ? 'o' : 'p';
+        if (roomId) roomRef.update({ firstTeam: next, selections: [], ready: {p:false, o:false} });
+        else { firstTeam = next; updateBadges(); resetCurrentDraftLocally(); }
     }
 
-    function leaveRoom() { location.href = location.pathname; }
-    function copyInviteLink() {
-        navigator.clipboard.writeText(document.getElementById('invite-url').value);
-        alert("コピーしました");
+    function resetCurrentDraftLocally() { 
+        turnIndex = 0; currentRoundUsed.clear(); 
+        document.querySelectorAll('.pick-slot').forEach((s,i) => { s.innerHTML = `Pick ${i+1}`; s.classList.remove('filled'); });
+        document.querySelectorAll('.ban-slot').forEach(s => s.innerHTML = ""); initGrid(); 
     }
+
+    function resetCurrentGame() { if(confirm("やり直しますか？")) { if(roomId) roomRef.update({selections:[], ready:{p:false, o:false}}); else resetCurrentDraftLocally(); } }
+    
+    function changeGame(num) {
+        document.querySelectorAll('#picks-purple .pick-slot').forEach(s => { if(s.dataset.pokemon) usedP.add(s.dataset.pokemon); });
+        document.querySelectorAll('#picks-orange .pick-slot').forEach(s => { if(s.dataset.pokemon) usedO.add(s.dataset.pokemon); });
+        if (roomId) roomRef.update({ currentGame: num, selections: [], usedP: Array.from(usedP), usedO: Array.from(usedO), ready: {p:false, o:false} });
+        else { resetCurrentDraftLocally(); }
+    }
+
+    function leaveRoom() { if(confirm("退出しますか？")) location.href = location.pathname; }
+    function copyInviteLink() { navigator.clipboard.writeText(document.getElementById('invite-url').value); alert("COPY OK"); }
     function closeRoleSelector() { finishSetup(myRole); }
-    function highlightTurn() {
-        const step = getSequence()[turnIndex];
-        if (step) startTimer(step.time);
-    }
+    function resetReadyUI() { isMyReady = false; isDraftActive = false; document.getElementById('ready-overlay').style.display = 'flex'; }
+    function updateConnectionUI(t, online) { const b = document.getElementById(`conn-${t}`); if(b) { b.style.display = 'inline-block'; b.className = `conn-badge ${online ? 'conn-online' : 'conn-offline'}`; b.innerText = online ? '🟢 ONLINE' : '🔴 OFFLINE'; } }
+
+    updateBadges();
 </script>
+
+<footer class="footer-disclaimer">
+    <p>&copy;2026 Developed by kirimi | ユナクラ杯 非公式ツール</p>
+    <p>当サイトはファンコンテンツであり、任天堂・ポケモン・テンセント等とは一切関係ありません。</p>
+</footer>
 </body>
 </html>
