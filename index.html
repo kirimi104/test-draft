@@ -46,6 +46,7 @@
         #role-selector {
             position: fixed; inset: 0; background: #050505;
             z-index: 9999; display: flex; align-items: center; justify-content: center;
+            padding-bottom: 50vh; /* ★これを追加（15vhの分だけ全体が上にずれます） */
             transition: opacity 0.5s var(--ios-ease);
         }
         /* 画面全体のうっすらとした走査線 */
@@ -448,9 +449,9 @@
                         <div class="data-banner">▶ 対戦相手として参加する</div>
                     </div>
                     <div class="mode-card" style="--theme: #00e5ff;" onclick="setRole('spec')">
-                        <div class="role-icon">👁️</div>
+                        <div class="role-icon">📺</div>
                         <h3 class="role-title">SPECTATOR</h3>
-                        <div class="data-banner">▶ 観戦モードで入室する</div>
+                        <div class="data-banner">▶ (運営専用)観戦モード</div>
                     </div>
                 `;
             }
@@ -623,7 +624,7 @@
                         setTimeout(() => {
                             let msg = "⚠️ 対戦相手によって「現在の試合」がやり直しになりました。再度準備完了を押してください。";
                             if (data.resetEvent.type === 'all') msg = "⚠️ 対戦相手によって「全試合の履歴」がリセットされました。再度準備完了を押してください。";
-                            if (data.resetEvent.type === 'swap') msg = "⚠️ 対戦相手によって「先攻・後攻」が入れ替えられ、試合がリセットされました。";
+                            if (data.resetEvent.type === 'swap') msg = "⚠️ 対戦相手によって「先攻・後攻」が入れ替えられ、現在の試合がリセットされました。";
                             alert(msg);
                         }, 100);
                     }
