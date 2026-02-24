@@ -42,7 +42,7 @@
             animation: scene-in 0.8s var(--ios-ease) forwards;
         }
 
-        /* ▼▼ モード選択のTVモチーフ（⑤＋③ハイブリッド）スタイル ▼▼ */
+        /* ▼▼ モード選択：⑤の枠組み（点滅なし） ▼▼ */
         #role-selector {
             position: fixed; inset: 0; background: #050505;
             z-index: 9999; display: flex; align-items: center; justify-content: center;
@@ -75,16 +75,6 @@
             position: absolute; bottom: -40px; left: 0; width: 100%;
             background: var(--theme); color: #000; font-size: 0.8rem; font-weight: bold;
             padding: 8px 0; transition: 0.3s; text-align: center;
-        }
-
-        /* ③の点滅アニメーション */
-        .blink-text {
-            display: inline-block;
-            animation: retro-blink-anim 1s infinite steps(2, start);
-        }
-        @keyframes retro-blink-anim {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
         }
 
         /* ⑤のホバー時アクション */
@@ -209,12 +199,12 @@
             <div class="mode-card" style="--theme: #199500;" onclick="setRole('solo')">
                 <div class="role-icon">🕹️</div>
                 <h3 class="role-title">SINGLE</h3>
-                <div class="data-banner"><span class="blink-text">▶ 一人で操作する</span></div>
+                <div class="data-banner">▶ 一人で操作する</div>
             </div>
             <div class="mode-card" style="--theme: #a170ff;" onclick="setRole('p')">
                 <div class="role-icon">⚔️</div>
                 <h3 class="role-title">VERSUS</h3>
-                <div class="data-banner"><span class="blink-text">▶ 対戦URLを発行する</span></div>
+                <div class="data-banner">▶ 対戦URLを発行する</div>
             </div>
         </div>
 
@@ -441,7 +431,7 @@
         }, 1000);
     }
 
-    /* ▼▼ モード選択のJS切り替え用修正部分 ▼▼ */
+    /* ▼▼ モード選択のJS切り替え（招待URLからアクセスした時用） ▼▼ */
     window.addEventListener('DOMContentLoaded', () => {
         if (roomId && hostRole) {
             document.querySelector('.welcome-title').innerText = 'JOIN ARENA';
@@ -450,16 +440,17 @@
             const container = document.getElementById('mode-cards-container');
             
             if (container) {
+                // 招待用URLでアクセスした場合のカード
                 container.innerHTML = `
                     <div class="mode-card" style="--theme: ${joinRole === 'o' ? '#ff9d52' : '#a170ff'};" onclick="setRole('${joinRole}')">
                         <div class="role-icon">${joinRole === 'o' ? '🟠' : '🟣'}</div>
                         <h3 class="role-title">TEAM ${joinRole.toUpperCase()}</h3>
-                        <div class="data-banner"><span class="blink-text">▶ 対戦相手として参加する</span></div>
+                        <div class="data-banner">▶ 対戦相手として参加する</div>
                     </div>
                     <div class="mode-card" style="--theme: #00e5ff;" onclick="setRole('spec')">
                         <div class="role-icon">👁️</div>
                         <h3 class="role-title">SPECTATOR</h3>
-                        <div class="data-banner"><span class="blink-text">▶ 観戦モードで入室する</span></div>
+                        <div class="data-banner">▶ 観戦モードで入室する</div>
                     </div>
                 `;
             }
