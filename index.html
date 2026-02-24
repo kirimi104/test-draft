@@ -2,928 +2,215 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1280">
-    <title>UNITE Fearless Draft</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-
+    <title>TVモチーフ・デザイン比較テスト（5パターン）</title>
     <style>
-        :root {
-            --purple: #a170ff;
-            --orange: #ff9d52;
-            --ban-red: #ff4747;
-            --spec-cyan: #00e5ff;
-            --color-g: #199500;
-            --color-o: #cc7d00;
-            --color-b: #0071c0;
-            --bg: #020205;
-            --glass: rgba(20, 20, 30, 0.85);
-            --ios-ease: cubic-bezier(0.4, 0, 0.2, 1);
-            --bounce-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
-            --timer-gold: #ffd700;
-            --text-main: #ffffff;
-        }
-
-        @keyframes scene-in {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
-            background-color: var(--bg);
-            margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; color: var(--text-main); min-width: 1250px; width: 100%; overflow-x: auto;
-            background-image: 
-                radial-gradient(circle at 15% 15%, rgba(161, 112, 255, 0.12) 0%, transparent 45%),
-                radial-gradient(circle at 85% 85%, rgba(255, 157, 82, 0.08) 0%, transparent 45%),
-                linear-gradient(180deg, #05050a 0%, #020205 100%);
-            animation: scene-in 0.8s var(--ios-ease) forwards;
+            font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+            margin: 0; padding: 0; background-color: #050505; color: #fff;
         }
-
-        #role-selector {
-            position: fixed; inset: 0; background: rgba(5, 5, 10, 0.95);
-            backdrop-filter: blur(25px); z-index: 9999; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; transition: opacity 0.5s var(--ios-ease);
-        }
-        #welcome-title {
-            font-weight: 900; letter-spacing: 8px; font-size: 2.5rem; margin-bottom: 20px;
-            text-shadow: 0 0 15px rgba(255,255,255,0.4);
-        }
+        .comparison-wrapper { display: flex; flex-direction: column; gap: 40px; padding: 40px; }
+        .design-section { border: 2px dashed #444; border-radius: 10px; position: relative; overflow: hidden; padding-bottom: 50px; background: #080808; }
+        .section-title { background: #444; color: #fff; padding: 5px 15px; display: inline-block; border-bottom-right-radius: 10px; margin: 0; font-size: 1rem; position: absolute; top: 0; left: 0; z-index: 20; }
+        .test-container { width: 100%; min-height: 400px; display: flex; align-items: center; justify-content: center; position: relative; margin-top: 20px; overflow: hidden; }
         
-        /* ▼▼ モード選択のサイバーデザイン修正部分 ▼▼ */
-        .role-card-container { 
-            display: flex; gap: 30px; margin-top: 20px; transition: 0.5s var(--ios-ease);
+        /* 画面全体のうっすらとした走査線（全パターン共通） */
+        .test-container::before {
+            content: ""; position: absolute; inset: 0; pointer-events: none;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 3px);
+            z-index: 5;
         }
+
+        .selector-inner { text-align: center; position: relative; z-index: 10; }
+        .tournament-logo { max-width: 280px; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+        .welcome-title { font-weight: 900; letter-spacing: 8px; font-size: 2.2rem; margin-bottom: 40px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .role-card-container { display: flex; gap: 40px; justify-content: center; }
+
+        /* 共通のカードベース・文字スタイル */
+        .mode-card { width: 200px; padding: 40px 15px; cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .role-icon { font-size: 3.5rem; margin-bottom: 15px; transition: 0.2s; }
+        .role-title { font-size: 1.2rem; font-weight: 900; letter-spacing: 2px; margin: 0; color: #fff; transition: 0.2s; }
+
+        /* =========================================
+           ① VHSアナログ（RGBズレ＋「▶ PLAY」統一）
+           ========================================= */
+        .theme-vhs .mode-card { background: #000; border: 1px solid #444; transition: 0.2s; }
+        .theme-vhs .vcr-status { position: absolute; top: 10px; left: 12px; font-size: 0.8rem; font-family: monospace; font-weight: bold; opacity: 0; transition: 0.2s; color: #0f0; text-shadow: 0 0 5px #0f0; }
         
-        .cyber-card {
-            position: relative; width: 220px; padding: 40px 15px; 
-            background: rgba(20, 20, 30, 0.6); 
-            border: 1px solid rgba(255,255,255,0.1); 
-            text-align: center; cursor: pointer; 
-            transition: all 0.3s var(--ios-ease);
-            clip-path: polygon(15% 0, 100% 0, 100% 80%, 85% 100%, 0 100%, 0 20%);
-        }
-        .cyber-card .card-bg {
-            position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transform: skewX(-20deg); transition: 0.5s;
-        }
-        .cyber-card:hover .card-bg { left: 200%; }
-        .cyber-card:hover { transform: translateY(-5px); background: rgba(40, 40, 50, 0.8); }
-        .cyber-card h3 { margin-top: 15px; font-size: 1.1rem; letter-spacing: 3px; font-weight: 900; text-shadow: 0 0 10px rgba(0,0,0,0.8); transition: 0.2s; }
-        .role-icon { font-size: 3.5rem; display: block; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+        @keyframes vhs-tracking { 0%, 15%, 100% { transform: translateX(0); } 5% { transform: translateX(-3px); } 10% { transform: translateX(2px); } }
+        @keyframes rgb-shift { 0%, 15%, 100% { text-shadow: none; filter: none; } 5% { text-shadow: -2px 0 #ff4747, 2px 0 #00e5ff; filter: drop-shadow(-2px 0 #ff4747) drop-shadow(2px 0 #00e5ff); } 10% { text-shadow: 2px 0 #ff4747, -2px 0 #00e5ff; filter: drop-shadow(2px 0 #ff4747) drop-shadow(-2px 0 #00e5ff); } }
 
-        .cyber-card.solo:hover { border-color: var(--color-g); box-shadow: 0 0 25px rgba(25, 149, 0, 0.3); }
-        .cyber-card.solo:hover h3 { color: var(--color-g); }
-        .cyber-card.matching:hover { border-color: var(--purple); box-shadow: 0 0 25px rgba(161, 112, 255, 0.3); }
-        .cyber-card.matching:hover h3 { color: var(--purple); }
-        .cyber-card.orange:hover { border-color: var(--orange); box-shadow: 0 0 25px rgba(255, 157, 82, 0.3); }
-        .cyber-card.orange:hover h3 { color: var(--orange); }
-        .cyber-card.spec:hover { border-color: var(--spec-cyan); box-shadow: 0 0 25px rgba(0, 229, 255, 0.3); }
-        .cyber-card.spec:hover h3 { color: var(--spec-cyan); }
+        .theme-vhs .mode-card:hover { border-color: #fff; background: #0a0a0a; animation: vhs-tracking 3s infinite linear; box-shadow: 0 0 20px rgba(255,255,255,0.1); }
+        .theme-vhs .mode-card:hover .vcr-status { opacity: 1; }
+        .theme-vhs .mode-card:hover .role-icon, .theme-vhs .mode-card:hover .role-title { animation: rgb-shift 3s infinite linear; }
+        .theme-vhs .mode-card:hover .role-title { color: var(--theme); }
 
-        /* グリッチエフェクト */
-        @keyframes glitch-text {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); text-shadow: -2px 0 var(--ban-red), 2px 0 var(--spec-cyan); }
-            40% { transform: translate(-2px, -2px); text-shadow: 2px 0 var(--ban-red), -2px 0 var(--spec-cyan); }
-            60% { transform: translate(2px, 2px); text-shadow: none; }
-            80% { transform: translate(2px, -2px); text-shadow: none; }
-            100% { transform: translate(0); }
-        }
-        .cyber-card:hover h3 { animation: glitch-text 0.3s infinite linear alternate-reverse; }
-        /* ▲▲ ここまで ▲▲ */
+        /* =========================================
+           ② スタジオ放送局（カラーバー＋「(( LIVE ))」）
+           ========================================= */
+        .theme-studio .mode-card { background: #111; border: 2px solid #222; border-radius: 8px; overflow: hidden; transition: 0.2s; }
+        .theme-studio .mode-card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: linear-gradient(90deg, #fff 14%, #ffeb3b 14% 28%, #00bcd4 28% 42%, #4caf50 42% 57%, #e91e63 57% 71%, #f44336 71% 85%, #2196f3 85%); opacity: 0.2; transition: 0.3s; }
+        .theme-studio .vcr-status { position: absolute; top: 12px; left: 12px; font-size: 0.75rem; font-weight: 900; letter-spacing: 1px; opacity: 0; color: #ff4747; }
+        
+        .theme-studio .mode-card:hover { border-color: #555; background: #1a1a1a; transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.8); }
+        .theme-studio .mode-card:hover::before { opacity: 1; height: 8px; }
+        .theme-studio .mode-card:hover .vcr-status { opacity: 1; animation: blink 1.5s infinite; }
+        .theme-studio .mode-card:hover .role-title { color: var(--theme); }
+        .theme-studio .mode-card:hover .role-icon { transform: scale(1.1); filter: drop-shadow(0 0 10px var(--theme)); }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-        .invite-container {
-            margin-top: 50px; padding: 25px 40px; background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
-            display: none; flex-direction: column; align-items: center;
-            animation: scene-in 0.6s var(--bounce-ease) forwards; backdrop-filter: blur(10px);
-        }
-        .invite-box { display: flex; gap: 10px; margin-top: 15px; margin-bottom: 20px; }
-        .invite-input { background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px 15px; border-radius: 12px; width: 340px; font-family: monospace; font-size: 0.9rem; outline: none; text-align: center; }
-        .copy-btn { background: var(--purple); color: white; border: none; padding: 0 20px; border-radius: 12px; cursor: pointer; font-weight: 800; transition: 0.3s var(--bounce-ease); }
-        .copy-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(161,112,255,0.5); }
-        .start-btn { background: #fff; color: #000; border: none; padding: 12px 35px; border-radius: 50px; cursor: pointer; font-weight: 900; font-size: 1rem; transition: 0.3s var(--bounce-ease); box-shadow: 0 0 15px rgba(255,255,255,0.2); }
-        .start-btn:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(255,255,255,0.6); }
+        /* =========================================
+           ③ アーケードCRT（深い丸み＋「INSERT COIN」風）
+           ========================================= */
+        .theme-crt .mode-card { background: #050505; border: 2px solid #333; border-radius: 15px 15px 30px 30px; box-shadow: inset 0 0 15px rgba(255,255,255,0.05); transition: 0.3s; }
+        .theme-crt .vcr-status { position: absolute; bottom: 15px; width: 100%; font-size: 0.7rem; font-family: monospace; opacity: 0; color: var(--theme); text-shadow: 0 0 5px var(--theme); }
+        
+        @keyframes crt-flicker { 0%, 100% { opacity: 1; } 5% { opacity: 0.8; transform: skewX(1deg); } 10% { opacity: 1; transform: skewX(0); } }
+        
+        .theme-crt .mode-card:hover { border-color: var(--theme); background: #0a0a0a; box-shadow: inset 0 0 25px rgba(255,255,255,0.1), 0 0 20px var(--theme); animation: crt-flicker 2.5s infinite; transform: scale(1.02); }
+        .theme-crt .mode-card:hover .vcr-status { opacity: 1; animation: blink 1s infinite steps(2, start); }
+        .theme-crt .mode-card:hover .role-title { color: var(--theme); text-shadow: 0 0 10px var(--theme); }
 
-        .pokemon-card.readonly { cursor: not-allowed; filter: grayscale(0.9) opacity(0.3); transform: none !important; pointer-events: none; }
+        /* =========================================
+           ④ チャンネル・ザップ（砂嵐フラッシュ＋「CH.1」）
+           ========================================= */
+        .theme-zap .mode-card { background: #0a0a0f; border: 1px solid #333; transition: 0.2s; position: relative; }
+        .theme-zap .vcr-status { position: absolute; top: 10px; right: 12px; font-size: 1.2rem; font-weight: 900; font-family: monospace; color: #0f0; opacity: 0; text-shadow: 0 0 8px #0f0; }
+        
+        /* チャンネルを切り替えた瞬間のノイズフラッシュ */
+        @keyframes static-flash { 0% { filter: contrast(5) grayscale(1) brightness(2); background: #fff; } 20% { filter: none; background: #111; } 100% { background: #111; } }
+        
+        .theme-zap .mode-card:hover { border-color: #fff; animation: static-flash 0.3s ease-out forwards; }
+        .theme-zap .mode-card:hover .vcr-status { opacity: 1; }
+        .theme-zap .mode-card:hover .role-title { color: var(--theme); }
 
-        .header-section { width: 96%; max-width: 1200px; background: var(--glass); backdrop-filter: blur(25px); padding: 24px; border-radius: 30px; margin-bottom: 24px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .game-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        .game-tabs button { padding: 10px 24px; border: none; border-radius: 12px; background: rgba(255,255,255,0.06); color: #888; cursor: pointer; font-weight: 800; transition: all 0.3s var(--ios-ease); }
-        .game-tabs button:hover { transform: translateY(-2px); background: rgba(255,255,255,0.1); }
-        .game-tabs button.active { background: #fff; color: #000; box-shadow: 0 0 20px rgba(255,255,255,0.4); transform: scale(1.05); }
+        /* =========================================
+           ⑤ デジタル放送風（クリーン＋データ放送風帯）
+           ========================================= */
+        .theme-digital .mode-card { background: #111; border: 1px solid #333; border-radius: 4px; overflow: hidden; transition: 0.3s; }
+        .theme-digital .data-banner { position: absolute; bottom: -30px; left: 0; width: 100%; background: var(--theme); color: #000; font-size: 0.75rem; font-weight: bold; padding: 4px 0; transition: 0.3s; }
+        
+        .theme-digital .mode-card:hover { border-color: var(--theme); transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .theme-digital .mode-card:hover .data-banner { bottom: 0; }
+        .theme-digital .mode-card:hover .role-title { color: var(--theme); transform: translateY(-10px); }
+        .theme-digital .mode-card:hover .role-icon { transform: translateY(-10px) scale(1.05); }
 
-        .admin-controls { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-        .swap-btn { padding: 10px 28px; border-radius: 50px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: 0.3s; }
-        .swap-btn:active { transform: scale(0.95); }
-        .reset-btn { background: transparent; color: var(--ban-red); border: none; cursor: pointer; opacity: 0.6; font-size: 0.8rem; transition: 0.3s; }
-        .reset-btn:hover { opacity: 1; text-decoration: underline; }
-        .reset-current { color: #bbb; } .reset-current:hover { color: #fff; }
-
-        .timer-controls { display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); }
-        .stop-btn { background: #444; color: white; border: none; padding: 4px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem; transition: 0.2s; }
-        .stop-btn:hover:not(:disabled) { background: #666; } .stop-btn.paused { background: var(--timer-gold); color: #000; }
-        .leave-btn { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); padding: 4px 15px; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 0.75rem; transition: 0.3s; margin-left: 15px; }
-        .leave-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
-
-        .status-container { margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 40px; }
-        .status-bar { font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; transition: 0.3s; }
-        @keyframes heartbeat { 0% { transform: scale(1); } 15% { transform: scale(1.1); } 30% { transform: scale(1); } 45% { transform: scale(1.15); } 100% { transform: scale(1); } }
-        @keyframes blink-red { 0%, 100% { color: var(--ban-red); opacity: 1; } 50% { color: #fff; opacity: 0.5; } }
-        .timer-display { font-size: 2.8rem; font-weight: 900; color: var(--timer-gold); min-width: 120px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.4); transition: color 0.3s; }
-        .timer-urgent { animation: heartbeat 1s infinite; color: var(--ban-red) !important; }
-        .timer-timeout { animation: blink-red 0.5s infinite; color: var(--ban-red) !important; font-size: 2rem; }
-
-        .main-layout { display: flex; width: 98%; max-width: 1600px; justify-content: center; gap: 24px; padding: 0 20px; box-sizing: border-box; }
-        .side-panel { width: 340px; flex-shrink: 0; }
-        @keyframes pulse-p { 0%, 100% { box-shadow: 0 0 10px rgba(161,112,255,0.1); } 50% { box-shadow: 0 0 30px rgba(161,112,255,0.4); } }
-        @keyframes pulse-o { 0%, 100% { box-shadow: 0 0 10px rgba(255,157,82,0.1); } 50% { box-shadow: 0 0 30px rgba(255,157,82,0.4); } }
-        .team-box { background: var(--glass); border-radius: 35px; padding: 24px; border: 2px solid rgba(255,255,255,0.05); transition: all 0.5s var(--ios-ease); }
-        .team-purple.active-team { border-color: var(--purple); animation: pulse-p 2s infinite; }
-        .team-orange.active-team { border-color: var(--orange); animation: pulse-o 2s infinite; }
-        .editable-name { display: inline-block; cursor: text; padding: 2px 8px; border-radius: 8px; transition: 0.3s var(--bounce-ease); border: 1px solid transparent; outline: none; }
-        .editable-name:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
-        .editable-name:focus { background: rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.3); transform: scale(1.02); }
-        .order-badge { font-size: 0.9rem; padding: 4px 12px; border-radius: 50px; background: rgba(255,255,255,0.1); vertical-align: middle; margin-left: 8px; }
-        .order-1st { background: #fff; color: #000; box-shadow: 0 0 10px #fff; }
-        .conn-badge { font-size: 0.65rem; padding: 4px 10px; border-radius: 50px; margin-left: 10px; font-weight: 900; transition: 0.4s var(--bounce-ease); display: none; vertical-align: middle; white-space: nowrap; }
-        .conn-online { background: rgba(76, 175, 80, 0.15); color: #4CAF50; border: 1px solid #4CAF50; box-shadow: 0 0 12px rgba(76, 175, 80, 0.4); }
-        .conn-offline { background: rgba(255, 71, 71, 0.1); color: var(--ban-red); border: 1px solid var(--ban-red); opacity: 0.6; }
-
-        .ban-group { display: flex; gap: 10px; margin-bottom: 25px; }
-        .ban-slot { flex: 1; aspect-ratio: 1/1; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .ban-slot img { width: 75%; height: 75%; object-fit: contain; margin-bottom: 12px; animation: slot-pop 0.4s var(--bounce-ease); }
-        .ban-label { position: absolute; bottom: 0; width: 100%; background: var(--ban-red); color: white; font-size: 0.65rem; text-align: center; font-weight: 900; padding: 3px 0; z-index: 2; }
-        .ban-none { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(45deg, rgba(255,71,71,0.1), rgba(0,0,0,0.6)); color: rgba(255,255,255,0.4); font-size: 1.8rem; font-weight: 900; position: relative; }
-        .ban-none::after { content: ""; position: absolute; width: 140%; height: 2px; background: var(--ban-red); transform: rotate(-45deg); opacity: 0.6; }
-        .ban-none-text { font-size: 0.6rem; color: var(--ban-red); margin-top: 5px; letter-spacing: 1px; }
-
-        .pick-slot { height: 70px; background: rgba(255,255,255,0.04); margin: 12px 0; border-radius: 20px; display: flex; align-items: center; padding: 0 18px; font-weight: 800; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s var(--ios-ease); }
-        .pick-slot.filled { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); animation: slot-pop 0.4s var(--bounce-ease); }
-        .pick-slot img { width: 50px; height: 50px; margin-right: 15px; object-fit: contain; }
-
-        .center-panel { flex: 1; min-width: 500px; max-width: 850px; width: 100%; }
-        .pokemon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; background: rgba(0,0,0,0.25); padding: 20px; border-radius: 35px; height: 75vh; overflow-y: scroll; scrollbar-width: none; border: 1px solid rgba(255,255,255,0.05); }
-        .pokemon-grid::-webkit-scrollbar { display: none; }
-        .pokemon-card { background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%); border-radius: 18px; cursor: pointer; padding: 12px 8px; border: 1px solid rgba(255,255,255,0.1); transition: transform 0.4s var(--bounce-ease), background 0.3s, border-color 0.3s; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.2; }
-        .pokemon-card:hover { transform: scale(1.08) translateY(-5px); background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); z-index: 5; }
-        .img-box { width: 80px; height: 80px; display: flex; justify-content: center; align-items: center; transition: 0.3s; }
-        .img-box img { width: 100%; height: 100%; object-fit: contain; }
-        .pokemon-card .name { font-size: 0.75rem; font-weight: 900; color: #ffffff; margin-top: 8px; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        .status-overlay { position: absolute; inset: 0; display: flex; z-index: 10; pointer-events: none; border-radius: 18px; overflow: hidden; }
-        .status-p, .status-o { flex: 1; height: 100%; transition: 0.4s var(--ios-ease); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 10px; opacity: 0; }
-        .status-p.used-p-bg, .status-o.used-o-bg { opacity: 1; }
-        .used-p-bg { background: rgba(161, 112, 255, 0.3); backdrop-filter: grayscale(1) brightness(0.4) blur(2px); }
-        .used-o-bg { background: rgba(255, 157, 82, 0.3); backdrop-filter: grayscale(1) brightness(0.4) blur(2px); }
-        .used-label { color: #fff; font-size: 0.6rem; font-weight: 900; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); }
-        .current-used { opacity: 0.1; filter: grayscale(1); pointer-events: none; transform: scale(0.9); }
-        .active-turn-slot { border: 2px solid #fff !important; box-shadow: 0 0 20px rgba(255, 255, 255, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3); animation: slot-focus-pulse 1.5s infinite ease-in-out !important; background: rgba(255, 255, 255, 0.2) !important; z-index: 10; }
-        @keyframes slot-focus-pulse { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.03); filter: brightness(1.3); } }
-        .ban-slot.active-turn-slot { border-color: var(--ban-red) !important; box-shadow: 0 0 20px rgba(255, 71, 71, 0.6); }
-
-        .footer-disclaimer { margin-top: 50px; padding: 20px; font-size: 0.5rem; color: rgba(255, 255, 255, 0.4); text-align: center; line-height: 1.6; width: 100%; border-top: 1px solid rgba(255, 255, 255, 0.05); }
-
-        #ready-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 35px; backdrop-filter: blur(10px); transition: opacity 0.5s; }
-        .ready-status-text { font-size: 1.2rem; font-weight: 900; transition: 0.3s; }
-        .ready-btn { margin-top: 40px; padding: 15px 40px; border-radius: 50px; background: #fff; color: #000; font-weight: 900; font-size: 1.1rem; cursor: pointer; border: none; transition: 0.3s; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
-        .ready-btn:hover { transform: scale(1.05); }
-        .countdown-text { font-size: 6rem; font-weight: 900; color: #fff; text-shadow: 0 0 30px rgba(255,255,255,0.5); display: none; animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        @keyframes pop-in { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
-<div id="role-selector">
-    <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-        <img src="img/ユナクラ杯.png" alt="ユナクラ杯" style="max-width: 320px; margin-bottom: 20px;" onerror="this.style.display='none'">
-        <h1 id="welcome-title">FEARLESS DRAFT</h1>
-        
-        <div class="role-card-container" id="mode-cards-container">
-            <div class="cyber-card solo" onclick="setRole('solo')">
-                <div class="card-bg"></div>
-                <div class="role-icon">🕹️</div>
-                <h3>SINGLE</h3>
-            </div>
-            <div class="cyber-card matching" onclick="setRole('p')">
-                <div class="card-bg"></div>
-                <div class="role-icon">🤝</div>
-                <h3>VERSUS</h3>
-            </div>
-        </div>
+<div class="comparison-wrapper">
 
-        <div id="invite-section" class="invite-container">
-            <h3 style="margin: 0; color: var(--text-main); font-weight: 800; letter-spacing: 2px;">招待リンクを作成しました！</h3>
-            <p style="font-size: 0.8rem; color: #aaa; margin: 5px 0 0 0;">参加者・観戦者にこのURLを共有してください</p>
-            <div class="invite-box">
-                <input type="text" id="invite-url" class="invite-input" readonly>
-                <button class="copy-btn" onclick="copyInviteLink()">COPY</button>
-            </div>
-            <button class="start-btn" onclick="closeRoleSelector()">ドラフト画面で待機する →</button>
-        </div>
-    </div>
-</div>
-<div class="header-section">
-    <div class="game-tabs">
-        <button onclick="changeGame(1)" id="tab1" class="active">GAME 1</button>
-        <button onclick="changeGame(2)" id="tab2">GAME 2</button>
-        <button onclick="changeGame(3)" id="tab3">GAME 3</button>
-        <button onclick="changeGame(4)" id="tab4">GAME 4</button>
-        <button onclick="changeGame(5)" id="tab5">GAME 5</button>
-    </div>
-    
-    <div class="admin-controls">
-        <div style="display: flex; gap: 20px; align-items: center;">
-            <button class="swap-btn" onclick="toggleFirstPick()">⇄ 先攻切り替え</button>
-            <div class="timer-controls">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 800; font-size: 0.85rem;">
-                    <input type="checkbox" id="timer-toggle" onchange="handleTimerToggle()" style="transform: scale(1.3);"> タイマー有効
-                </label>
-                <button id="timer-stop-btn" class="stop-btn" onclick="toggleTimerPause()" disabled>ストップ</button>
-            </div>
-        </div>
-        <div style="display: flex; gap: 25px; margin-top: 5px;">
-            <button class="reset-btn reset-current" onclick="resetCurrentGame()">現在の試合をやり直す</button>
-            <button class="reset-btn" onclick="resetAll()">全試合をリセット</button>
-        </div>
-        
-        <div style="display: flex; align-items: center; justify-content: center; margin-top: 5px;">
-            <div id="my-role-display" style="font-size: 0.75rem; color: #aaa; background: rgba(255,255,255,0.08); padding: 4px 15px; border-radius: 50px; font-weight: bold; letter-spacing: 1px;">MODE: --</div>
-            <button class="leave-btn" onclick="leaveRoom()">🔙 退出・モード変更</button>
-        </div>
-    </div>
-
-    <div class="status-container">
-        <div class="status-bar" id="status-msg">WAITING FOR DRAFT</div>
-        <div class="timer-display" id="timer">--</div>
-    </div>
-</div>
-
-<div class="main-layout">
-    <div class="side-panel">
-        <div class="team-box team-purple" id="panel-p">
-            <h2>
-                <span class="editable-name" contenteditable="true" spellcheck="false" id="name-p">PURPLE</span>
-                <span id="badge-p" class="order-badge">先攻</span>
-                <span id="conn-p" class="conn-badge conn-offline">🔴 OFFLINE</span>
-            </h2>
-            <div class="ban-group">
-                <div class="ban-slot" id="p-ban-0"></div>
-                <div class="ban-slot" id="p-ban-1"></div>
-                <div class="ban-slot" id="p-ban-2"></div>
-            </div>
-            <div id="picks-purple">
-                <div class="pick-slot" id="p-pick-0">Pick 1</div>
-                <div class="pick-slot" id="p-pick-1">Pick 2</div>
-                <div class="pick-slot" id="p-pick-2">Pick 3</div>
-                <div class="pick-slot" id="p-pick-3">Pick 4</div>
-                <div class="pick-slot" id="p-pick-4">Pick 5</div>
+    <div class="design-section">
+        <h2 class="section-title">① VHSアナログ（「▶ PLAY」＋ 画面のヨレと色ズレ）</h2>
+        <div class="test-container theme-vhs">
+            <div class="selector-inner">
+                <img src="img/ユナクラ杯.png" alt="ユナクラ杯" class="tournament-logo" onerror="this.style.display='none'">
+                <h1 class="welcome-title">FEARLESS DRAFT</h1>
+                <div class="role-card-container">
+                    <div class="mode-card" style="--theme: #199500;">
+                        <div class="vcr-status">▶ PLAY</div>
+                        <div class="role-icon">🕹️</div>
+                        <h3 class="role-title">SINGLE</h3>
+                    </div>
+                    <div class="mode-card" style="--theme: #a170ff;">
+                        <div class="vcr-status">▶ PLAY</div>
+                        <div class="role-icon">🤝</div>
+                        <h3 class="role-title">VERSUS</h3>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="center-panel" style="position: relative;">
-        <div id="ready-overlay" style="display: none;">
-            <h2 id="ready-title" style="letter-spacing: 2px; margin-bottom: 10px;">ドラフト開始待機中...</h2>
-            <div id="ready-status-container" style="display: flex; gap: 40px; margin-top: 20px;">
-                <div id="ready-p" class="ready-status-text" style="color: var(--purple); opacity: 0.4;">🟣 PURPLE: 準備中</div>
-                <div id="ready-o" class="ready-status-text" style="color: var(--orange); opacity: 0.4;">🟠 ORANGE: 準備中</div>
-            </div>
-            <button id="my-ready-btn" class="ready-btn" onclick="toggleReady()">準備完了にする</button>
-            <div id="countdown-display" class="countdown-text">3</div>
-        </div>
-
-        <div class="pokemon-grid" id="pokemon-list"></div>
-    </div>
-
-    <div class="side-panel">
-        <div class="team-box team-orange" id="panel-o">
-            <h2>
-                <span class="editable-name" contenteditable="true" spellcheck="false" id="name-o">ORANGE</span>
-                <span id="badge-o" class="order-badge">後攻</span>
-                <span id="conn-o" class="conn-badge conn-offline">🔴 OFFLINE</span>
-            </h2>
-            <div class="ban-group">
-                <div class="ban-slot" id="o-ban-0"></div>
-                <div class="ban-slot" id="o-ban-1"></div>
-                <div class="ban-slot" id="o-ban-2"></div>
-            </div>
-            <div id="picks-orange">
-                <div class="pick-slot" id="o-pick-0">Pick 1</div>
-                <div class="pick-slot" id="o-pick-1">Pick 2</div>
-                <div class="pick-slot" id="o-pick-2">Pick 3</div>
-                <div class="pick-slot" id="o-pick-3">Pick 4</div>
-                <div class="pick-slot" id="o-pick-4">Pick 5</div>
+    <div class="design-section">
+        <h2 class="section-title">② スタジオ放送局（カラーバー ＋ 点滅する「(( LIVE ))」）</h2>
+        <div class="test-container theme-studio">
+            <div class="selector-inner">
+                <img src="img/ユナクラ杯.png" alt="ユナクラ杯" class="tournament-logo" onerror="this.style.display='none'">
+                <h1 class="welcome-title">FEARLESS DRAFT</h1>
+                <div class="role-card-container">
+                    <div class="mode-card" style="--theme: #199500;">
+                        <div class="vcr-status">(( STANDBY ))</div>
+                        <div class="role-icon">🕹️</div>
+                        <h3 class="role-title">SINGLE</h3>
+                    </div>
+                    <div class="mode-card" style="--theme: #a170ff;">
+                        <div class="vcr-status">(( LIVE ))</div>
+                        <div class="role-icon">🤝</div>
+                        <h3 class="role-title">VERSUS</h3>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <div class="design-section">
+        <h2 class="section-title">③ アーケードCRT（深い丸み ＋ 「PRESS START」）</h2>
+        <div class="test-container theme-crt">
+            <div class="selector-inner">
+                <img src="img/ユナクラ杯.png" alt="ユナクラ杯" class="tournament-logo" onerror="this.style.display='none'">
+                <h1 class="welcome-title">FEARLESS DRAFT</h1>
+                <div class="role-card-container">
+                    <div class="mode-card" style="--theme: #199500;">
+                        <div class="role-icon">🕹️</div>
+                        <h3 class="role-title">SINGLE</h3>
+                        <div class="vcr-status">▶ PRESS START</div>
+                    </div>
+                    <div class="mode-card" style="--theme: #a170ff;">
+                        <div class="role-icon">🤝</div>
+                        <h3 class="role-title">VERSUS</h3>
+                        <div class="vcr-status">▶ INSERT COIN</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="design-section">
+        <h2 class="section-title">④ チャンネル・ザップ（ホバー時に一瞬の砂嵐 ＋ 「CH.1」）</h2>
+        <div class="test-container theme-zap">
+            <div class="selector-inner">
+                <img src="img/ユナクラ杯.png" alt="ユナクラ杯" class="tournament-logo" onerror="this.style.display='none'">
+                <h1 class="welcome-title">FEARLESS DRAFT</h1>
+                <div class="role-card-container">
+                    <div class="mode-card" style="--theme: #199500;">
+                        <div class="vcr-status">CH. 1</div>
+                        <div class="role-icon">🕹️</div>
+                        <h3 class="role-title">SINGLE</h3>
+                    </div>
+                    <div class="mode-card" style="--theme: #a170ff;">
+                        <div class="vcr-status">CH. 2</div>
+                        <div class="role-icon">🤝</div>
+                        <h3 class="role-title">VERSUS</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="design-section">
+        <h2 class="section-title">⑤ デジタル放送風（ノイズ無し・下からデータ帯が出現）</h2>
+        <div class="test-container theme-digital">
+            <div class="selector-inner">
+                <img src="img/ユナクラ杯.png" alt="ユナクラ杯" class="tournament-logo" onerror="this.style.display='none'">
+                <h1 class="welcome-title">FEARLESS DRAFT</h1>
+                <div class="role-card-container">
+                    <div class="mode-card" style="--theme: #199500;">
+                        <div class="role-icon">🕹️</div>
+                        <h3 class="role-title">SINGLE</h3>
+                        <div class="data-banner">▶ SELECT MODE</div>
+                    </div>
+                    <div class="mode-card" style="--theme: #a170ff;">
+                        <div class="role-icon">🤝</div>
+                        <h3 class="role-title">VERSUS</h3>
+                        <div class="data-banner">▶ CONNECT</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCTb7Db3ZN-qhCaPrqwfymMG5BTQH_Wpgs",
-      authDomain: "unite-fearlessdraft-tool.firebaseapp.com",
-      databaseURL: "https://unite-fearlessdraft-tool-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "unite-fearlessdraft-tool",
-      storageBucket: "unite-fearlessdraft-tool.firebasestorage.app",
-      messagingSenderId: "541205384892",
-      appId: "1:541205384892:web:aa26d0bc1ee94797a3cab9"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    let roomRef = null;
-
-    let deviceId = localStorage.getItem('fearlessDraftDeviceId');
-    if (!deviceId) {
-        deviceId = 'dev_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('fearlessDraftDeviceId', deviceId);
-    }
-
-    const pokemonNames = ["アローラキュウコン", "アローラライチュウ", "インテレオン", "ウッウ", "エースバーン", "エーフィ", "グレイシア", "グレンアルマ", "ゲッコウガ", "サーナイト", "シャンデラ", "ジュナイパー", "ジュラルドン", "ドラパルト", "ニンフィア", "ピカチュウ", "フシギバナ", "マフォクシー", "ミュウ", "ミュウツーY", "ミライドン", "ラティオス", "イワパレス", "オーロット", "カビゴン", "カメックス", "シャワーズ", "ヌメルゴン", "ブラッキー", "ホウオウ", "マンムー", "ヤドラン", "ヨクバリス", "ラプラス", "アブソル", "ガラルギャロップ", "ゲンガー", "ゼラオラ", "ゾロアーク", "ダークライ", "ドードリオ", "ニャース", "ファイアロー", "マスカーニャ", "リーフィア", "アマージョ", "ウーラオス", "エンペルト", "カイリキー", "カイリュー", "ガブリアス", "ギャラドス", "メガギャラドス", "ギルガルド", "ザシアン", "スイクン", "ソウブレイズ", "ダダリン", "タイレーツ", "デカヌチャン", "ネギガナイト", "パーモット", "バシャーモ", "ハッサム", "バンギラス", "マッシブーン", "マリルリ", "ミミッキュ", "ミュウツーX", "メタグロス", "リザードン", "メガリザードンX", "メガリザードンY", "ルカリオ", "メガルカリオ", "キュワワー", "コダック", "ハピナス", "バリヤード", "ピクシー", "フーパ", "プクリン", "マホイップ", "ヤミラミ", "ラティアス", "ワタシラガ"];
-    let usedP = new Set(), usedO = new Set(), currentRoundUsed = new Set();
-    let turnIndex = 0, firstTeam = 'p', timeLeft = 0, timerInterval = null;
-    let isWaitingForPick = false, isPaused = false, isTimerEnabled = false; 
-    let myRole = 'none', currentGameNum = 1, lastResetTimestamp = null; 
-    let isMyReady = false, isCountingDown = false, isDraftActive = false, audioCtx = null;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    let roomId = urlParams.get('room');
-    let hostRole = urlParams.get('host');
-
-    function playGentleBeep(frequency, duration) {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.type = 'sine'; oscillator.frequency.value = frequency;
-        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.05); 
-        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
-        oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
-        oscillator.start(); oscillator.stop(audioCtx.currentTime + duration);
-    }
-
-    function toggleReady() {
-        if (myRole === 'none' || myRole === 'solo' || myRole === 'spec') return;
-        
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-
-        isMyReady = !isMyReady;
-        const btn = document.getElementById('my-ready-btn');
-        if (isMyReady) {
-            btn.innerText = "準備完了！ (キャンセル)"; btn.style.background = "#4CAF50"; btn.style.color = "#fff";
-        } else {
-            btn.innerText = "準備完了にする"; btn.style.background = "#fff"; btn.style.color = "#000";
-        }
-        if (roomId) db.ref(`rooms/${roomId}/ready/${myRole}`).set(isMyReady);
-    }
-
-    function resetReadyUI() {
-        isMyReady = false; isCountingDown = false; isDraftActive = false; 
-        
-        const btn = document.getElementById('my-ready-btn');
-        btn.innerText = "準備完了にする"; btn.style.background = "#fff"; btn.style.color = "#000";
-        
-        if (myRole !== 'solo' && myRole !== 'none') {
-            document.getElementById('ready-overlay').style.display = 'flex';
-            document.getElementById('ready-title').style.display = 'block';
-            document.getElementById('ready-status-container').style.display = 'flex';
-            document.getElementById('countdown-display').style.display = 'none';
-            
-            if (myRole === 'spec') {
-                btn.style.display = 'none';
-                document.getElementById('ready-title').innerText = "両チームの準備を待っています...";
-            } else {
-                btn.style.display = 'block';
-                document.getElementById('ready-title').innerText = "ドラフト開始待機中...";
-            }
-        }
-    }
-
-    function startCountdown() {
-        isCountingDown = true;
-        document.getElementById('ready-title').style.display = 'none';
-        document.getElementById('ready-status-container').style.display = 'none';
-        document.getElementById('my-ready-btn').style.display = 'none';
-        
-        const cdDisplay = document.getElementById('countdown-display');
-        cdDisplay.style.display = 'block';
-        
-        let count = 3; cdDisplay.innerText = count; playGentleBeep(440, 0.4); 
-        
-        const interval = setInterval(() => {
-            count--;
-            if (count > 0) {
-                cdDisplay.innerText = count; cdDisplay.style.animation = 'none'; cdDisplay.offsetHeight;
-                cdDisplay.style.animation = 'pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                playGentleBeep(440, 0.4);
-            } else if (count === 0) {
-                cdDisplay.innerText = "START!"; playGentleBeep(523.25, 0.6); 
-            } else {
-                clearInterval(interval);
-                document.getElementById('ready-overlay').style.display = 'none';
-                isCountingDown = false; isDraftActive = true; 
-                
-                if (roomId && (myRole === hostRole || (hostRole === 'spec' && myRole === 'p'))) {
-                    roomRef.update({ timerEnabled: true, timerPaused: false });
-                } else if (!roomId) {
-                    document.getElementById('timer-toggle').checked = true; applyTimerToggleLocal(true);
-                }
-                highlightTurn(); 
-            }
-        }, 1000);
-    }
-
-    /* ▼▼ モード選択のJS切り替え用修正部分 ▼▼ */
-    window.addEventListener('DOMContentLoaded', () => {
-        if (roomId && hostRole) {
-            document.getElementById('welcome-title').innerText = 'JOIN ARENA';
-            
-            const joinRole = hostRole === 'p' ? 'o' : 'p';
-            const container = document.getElementById('mode-cards-container');
-            
-            container.innerHTML = `
-                <div class="cyber-card orange" onclick="setRole('${joinRole}')">
-                    <div class="card-bg"></div>
-                    <div class="role-icon">${joinRole === 'o' ? '🟠' : '🟣'}</div>
-                    <h3>TEAM ${joinRole.toUpperCase()}</h3>
-                </div>
-                <div class="cyber-card spec" onclick="setRole('spec')">
-                    <div class="card-bg"></div>
-                    <div class="role-icon">👁️</div>
-                    <h3>SPECTATOR</h3>
-                </div>
-            `;
-        }
-    });
-    /* ▲▲ ここまで ▲▲ */
-
-    function leaveRoom() {
-        if (confirm("現在のモードを終了して、最初の画面に戻りますか？\n（オンライン対戦の場合は部屋から退出します）")) {
-            if (roomId && myRole !== 'solo' && myRole !== 'spec') {
-                db.ref(`rooms/${roomId}/players/${myRole}`).set(false).then(() => {
-                    window.location.href = window.location.pathname;
-                });
-            } else {
-                window.location.href = window.location.pathname;
-            }
-        }
-    }
-
-    function joinAs(role) {
-        myRole = role;
-        if (role !== 'spec' && role !== 'solo' && roomId) {
-            const myStatusRef = db.ref(`rooms/${roomId}/players/${role}`);
-            myStatusRef.set(true); myStatusRef.onDisconnect().set(false);
-        }
-        
-        if (roomId) {
-            setupFirebaseListener();
-        }
-        
-        finishSetup(role);
-    }
-
-    function setRole(role) {
-        if (roomId) {
-            roomRef = db.ref('rooms/' + roomId);
-            if (role === 'p' || role === 'o') {
-                db.ref(`rooms/${roomId}/devices/${role}`).once('value').then(snap => {
-                    const existingId = snap.val();
-                    if (!existingId || existingId === deviceId) {
-                        if (!existingId) db.ref(`rooms/${roomId}/devices/${role}`).set(deviceId);
-                        joinAs(role);
-                    } else {
-                        alert("⚠️ このチームはすでに他のプレイヤーが参加しています。\n観戦(SPECTATOR)モードで入室します。");
-                        joinAs('spec');
-                    }
-                });
-            } else {
-                joinAs(role);
-            }
-        } else {
-            if (role === 'solo') {
-                joinAs(role);
-            } else if (role === 'spec') {
-                alert("観戦(SPECTATOR)モードは、発行された招待リンクからアクセスした場合のみ利用できます。");
-            } else {
-                roomId = Math.random().toString(36).substring(2, 8);
-                hostRole = role;
-                roomRef = db.ref('rooms/' + roomId);
-
-                const initialDevices = {};
-                initialDevices[role] = deviceId;
-
-                roomRef.set({
-                    hostRole: role, currentGame: 1, firstTeam: 'p',
-                    names: { p: 'PURPLE', o: 'ORANGE' }, selections: [],
-                    timerEnabled: false, timerPaused: false,
-                    players: { p: role === 'p', o: role === 'o' },
-                    ready: { p: false, o: false },
-                    devices: initialDevices
-                }).then(() => {
-                    myRole = role;
-                    const myStatusRef = db.ref(`rooms/${roomId}/players/${myRole}`);
-                    myStatusRef.set(true);
-                    myStatusRef.onDisconnect().set(false);
-                    setupFirebaseListener();
-                });
-                
-                const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}&host=${role}`;
-                document.getElementById('invite-url').value = inviteUrl;
-                
-                document.querySelector('.role-card-container').style.display = 'none';
-                document.getElementById('invite-section').style.display = 'flex';
-            }
-        }
-    }
-
-    function copyInviteLink() {
-        const url = document.getElementById('invite-url').value;
-        navigator.clipboard.writeText(url).then(() => {
-            const btn = document.querySelector('.copy-btn');
-            btn.innerText = 'COPIED!'; btn.style.background = '#4CAF50'; btn.style.boxShadow = '0 0 15px rgba(76, 175, 80, 0.5)';
-            setTimeout(() => { btn.innerText = 'COPY'; btn.style.background = 'var(--purple)'; btn.style.boxShadow = 'none'; }, 2000);
-        });
-    }
-
-    function closeRoleSelector() { finishSetup(myRole); }
-
-    function finishSetup(role) {
-        document.getElementById('role-selector').style.opacity = '0';
-        setTimeout(() => document.getElementById('role-selector').style.display = 'none', 500);
-        
-        const labels = {solo: '🕹️ SOLO MODE', p: '🟣 PURPLE TEAM', o: '🟠 ORANGE TEAM', spec: '👁️ SPECTATOR'};
-        let displayStr = `MODE: ${labels[role]}`;
-        if (roomId && role !== 'solo') displayStr += ` / ROOM: [${roomId}]`;
-        document.getElementById('my-role-display').innerText = displayStr;
-        
-        if (role !== 'solo') {
-            document.getElementById('conn-p').style.display = 'inline-block';
-            document.getElementById('conn-o').style.display = 'inline-block';
-            resetReadyUI();
-        }
-        
-        initGrid();
-    }
-
-    function setupFirebaseListener() {
-        roomRef.on('value', snapshot => {
-            const data = snapshot.val();
-            if (!data) return;
-
-            if (data.players) {
-                updateConnectionUI('p', data.players.p); updateConnectionUI('o', data.players.o);
-            } else {
-                updateConnectionUI('p', false); updateConnectionUI('o', false);
-            }
-
-            const selectionsLength = data.selections ? data.selections.length : 0;
-
-            if (data.ready && myRole !== 'solo') {
-                const rp = document.getElementById('ready-p'); const ro = document.getElementById('ready-o');
-                rp.style.opacity = data.ready.p ? "1" : "0.4"; rp.innerText = data.ready.p ? "🟣 PURPLE: READY!" : "🟣 PURPLE: 準備中";
-                ro.style.opacity = data.ready.o ? "1" : "0.4"; ro.innerText = data.ready.o ? "🟠 ORANGE: READY!" : "🟠 ORANGE: 準備中";
-
-                const overlay = document.getElementById('ready-overlay');
-                
-                if (data.ready.p && data.ready.o && !isCountingDown && overlay.style.display !== 'none') {
-                    if (turnIndex === 0 && selectionsLength === 0) {
-                        startCountdown();
-                    } else {
-                        overlay.style.display = 'none'; isDraftActive = true;
-                    }
-                } 
-                else if ((!data.ready.p || !data.ready.o) && !isCountingDown) {
-                    isDraftActive = false; overlay.style.display = 'flex';
-                    document.getElementById('ready-title').style.display = 'block';
-                    document.getElementById('ready-status-container').style.display = 'flex';
-                    document.getElementById('countdown-display').style.display = 'none';
-                    
-                    if (myRole !== 'spec') {
-                        document.getElementById('my-ready-btn').style.display = 'block';
-                        if (data.ready[myRole] !== undefined && data.ready[myRole] !== isMyReady) {
-                            isMyReady = data.ready[myRole];
-                            const btn = document.getElementById('my-ready-btn');
-                            if (isMyReady) { btn.innerText = "準備完了！ (キャンセル)"; btn.style.background = "#4CAF50"; btn.style.color = "#fff"; } 
-                            else { btn.innerText = "準備完了にする"; btn.style.background = "#fff"; btn.style.color = "#000"; }
-                        }
-                    } else {
-                        document.getElementById('my-ready-btn').style.display = 'none';
-                    }
-                    highlightTurn(); 
-                }
-            }
-
-            if (data.resetEvent) {
-                if (lastResetTimestamp === null) { lastResetTimestamp = data.resetEvent.time; } 
-                else if (data.resetEvent.time !== lastResetTimestamp) {
-                    lastResetTimestamp = data.resetEvent.time;
-                    if (data.resetEvent.by !== myRole && myRole !== 'none') {
-                        setTimeout(() => {
-                            let msg = "⚠️ 対戦相手によって「現在の試合」がやり直しになりました。再度準備完了を押してください。";
-                            if (data.resetEvent.type === 'all') msg = "⚠️ 対戦相手によって「全試合の履歴」がリセットされました。再度準備完了を押してください。";
-                            if (data.resetEvent.type === 'swap') msg = "⚠️ 対戦相手によって「先攻・後攻」が入れ替えられ、試合がリセットされました。";
-                            alert(msg);
-                        }, 100);
-                    }
-                }
-            } else if (lastResetTimestamp === null) { lastResetTimestamp = 0; }
-
-            if (data.timerEnabled !== undefined && isTimerEnabled !== data.timerEnabled) applyTimerToggleLocal(data.timerEnabled);
-            if (data.timerPaused !== undefined && isPaused !== data.timerPaused) applyTimerPauseLocal(data.timerPaused);
-
-            if (data.names) {
-                const np = document.getElementById('name-p'), no = document.getElementById('name-o');
-                if (np.innerText !== data.names.p && document.activeElement !== np) np.innerText = data.names.p;
-                if (no.innerText !== data.names.o && document.activeElement !== no) no.innerText = data.names.o;
-            }
-
-            if (data.firstTeam && data.firstTeam !== firstTeam) {
-                firstTeam = data.firstTeam; updateBadges(); if (turnIndex === 0) initGrid();
-            }
-
-            const newSelections = data.selections || [];
-
-            if (data.currentGame && data.currentGame !== currentGameNum) {
-                currentGameNum = data.currentGame;
-                if (data.usedP) usedP = new Set(data.usedP); else usedP.clear();
-                if (data.usedO) usedO = new Set(data.usedO); else usedO.clear();
-                
-                document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
-                document.getElementById(`tab${currentGameNum}`).classList.add('active');
-                resetCurrentDraftLocally();
-            } else if (newSelections.length === 0 && turnIndex > 0) {
-                resetCurrentDraftLocally();
-            }
-
-            while (turnIndex < newSelections.length) { executeSelectionLocally(newSelections[turnIndex]); }
-        });
-    }
-
-    function updateConnectionUI(team, isOnline) {
-        const badge = document.getElementById(`conn-${team}`);
-        if (!badge) return;
-        if (isOnline) { badge.className = 'conn-badge conn-online'; badge.innerText = '🟢 ONLINE'; } 
-        else { badge.className = 'conn-badge conn-offline'; badge.innerText = '🔴 OFFLINE'; }
-    }
-
-    document.querySelectorAll('.editable-name').forEach(el => {
-        el.addEventListener('blur', (e) => {
-            if (roomId) { const team = e.target.id === 'name-p' ? 'p' : 'o'; roomRef.child('names').child(team).set(e.target.innerText); }
-        });
-        el.addEventListener('input', () => { if(!isWaitingForPick) highlightTurn(); });
-    });
-
-    function getSequence() {
-        const p1 = firstTeam, p2 = (firstTeam === 'p' ? 'o' : 'p');
-        return [
-            {t:p1, m:'B', i:0, time:15}, {t:p2, m:'B', i:0, time:15},
-            {t:p1, m:'B', i:1, time:15}, {t:p2, m:'B', i:1, time:15},
-            {t:p1, m:'B', i:2, time:15}, {t:p2, m:'B', i:2, time:15},
-            {t:p1, m:'P', i:0, time:30}, {t:p2, m:'P', i:0, time:30}, {t:p2, m:'P', i:1, time:0},
-            {t:p1, m:'P', i:1, time:30}, {t:p1, m:'P', i:2, time:0},
-            {t:p2, m:'P', i:2, time:30}, {t:p2, m:'P', i:3, time:0},
-            {t:p1, m:'P', i:3, time:30}, {t:p1, m:'P', i:4, time:0}, {t:p2, m:'P', i:4, time:30}
-        ];
-    }
-
-    function initGrid() {
-        const grid = document.getElementById('pokemon-list');
-        const step = getSequence()[turnIndex];
-        grid.innerHTML = '';
-        pokemonNames.forEach(name => {
-            const card = document.createElement('div');
-            const readonly = (myRole !== 'solo' && step && myRole !== step.t) || myRole === 'spec';
-            card.className = `pokemon-card ${currentRoundUsed.has(name) ? 'current-used' : ''} ${readonly ? 'readonly' : ''}`;
-            const pUsed = usedP.has(name), oUsed = usedO.has(name);
-            card.innerHTML = `
-                <div class="status-overlay">
-                    <div class="status-p ${pUsed ? 'used-p-bg' : ''}">${pUsed ? '<span class="used-label">USED</span>' : ''}</div>
-                    <div class="status-o ${oUsed ? 'used-o-bg' : ''}">${oUsed ? '<span class="used-label">USED</span>' : ''}</div>
-                </div>
-                <div class="img-box"><img src="img/${name}.png" onerror="this.style.opacity='0.2';"></div>
-                <div class="name">${name}</div>`;
-            if (!readonly) card.onclick = () => handleSelect(name);
-            grid.appendChild(card);
-        });
-        highlightTurn();
-    }
-
-    function handleSelect(name) {
-        const step = getSequence()[turnIndex];
-        if (!step || currentRoundUsed.has(name) || myRole === 'spec') return;
-        if (step.m === 'P') { if ((step.t === 'p' && usedP.has(name)) || (step.t === 'o' && usedO.has(name))) return; }
-        
-        if (roomId) { roomRef.child('selections').child(turnIndex).set(name); roomRef.update({ timerPaused: false }); } 
-        else { executeSelectionLocally(name); }
-    }
-
-    function executeSelectionLocally(name) {
-        const step = getSequence()[turnIndex];
-        if (name === 'TIMEOUT' && step.m === 'B') {
-            document.getElementById(`${step.t}-ban-${step.i}`).innerHTML = `<div class="ban-none">🚫<div class="ban-none-text">NO BAN</div></div>`;
-            turnIndex++; initGrid(); return;
-        }
-
-        if (step.m === 'B') { document.getElementById(`${step.t}-ban-${step.i}`).innerHTML = `<img src="img/${name}.png"><div class="ban-label">${name}</div>`; } 
-        else {
-            const slot = document.getElementById(`${step.t}-pick-${step.i}`);
-            slot.classList.add('filled'); slot.innerHTML = `<img src="img/${name}.png"> <span>${name}</span>`; slot.dataset.pokemon = name;
-        }
-        
-        currentRoundUsed.add(name); isWaitingForPick = false; turnIndex++; initGrid();
-    }
-
-    function handleTimerToggle() {
-        const isEnabled = document.getElementById('timer-toggle').checked;
-        applyTimerToggleLocal(isEnabled); 
-        if (roomId) roomRef.update({ timerEnabled: isEnabled });
-    }
-
-    function applyTimerToggleLocal(isEnabled) {
-        isTimerEnabled = isEnabled; document.getElementById('timer-toggle').checked = isEnabled; updateStopBtnUI();
-        if (!isEnabled) {
-            clearInterval(timerInterval); document.getElementById('timer').innerText = "--"; document.getElementById('timer').className = "timer-display"; 
-            isPaused = false; isWaitingForPick = false; 
-        } else {
-            const step = getSequence()[turnIndex];
-            if (step && !isWaitingForPick) {
-                if (step.time > 0) startTimer(step.time); else if (step.time === 0 && turnIndex > 0) document.getElementById('timer').innerText = "--";
-            }
-        }
-    }
-
-    function toggleTimerPause() {
-        if (!isTimerEnabled || isWaitingForPick) return;
-        const newPauseState = !isPaused; applyTimerPauseLocal(newPauseState); 
-        if (roomId) roomRef.update({ timerPaused: newPauseState });
-    }
-
-    function applyTimerPauseLocal(newPauseState) { isPaused = newPauseState; updateStopBtnUI(); updateTimerDisplay(); }
-
-    function startTimer(seconds) {
-        clearInterval(timerInterval); isWaitingForPick = false; updateStopBtnUI();
-        if (!isTimerEnabled || seconds <= 0) return;
-        
-        timeLeft = seconds; updateTimerDisplay();
-        timerInterval = setInterval(() => {
-            if (!isPaused) {
-                timeLeft--; updateTimerDisplay();
-                if (timeLeft <= 0) { clearInterval(timerInterval); handleTimeout(); }
-            }
-        }, 1000);
-    }
-
-    function updateTimerDisplay() {
-        const d = document.getElementById('timer');
-        if (isWaitingForPick) { d.innerText = "TIME UP!"; d.className = "timer-display timer-timeout"; return; }
-        d.innerText = timeLeft; d.className = "timer-display" + (timeLeft <= 5 ? " timer-urgent" : "");
-        if (isPaused) d.style.opacity = "0.5"; else d.style.opacity = "1";
-    }
-
-    function updateStopBtnUI() {
-        const btn = document.getElementById('timer-stop-btn'); btn.disabled = !isTimerEnabled;
-        if (isPaused) { btn.innerText = "再開"; btn.classList.add('paused'); } else { btn.innerText = "ストップ"; btn.classList.remove('paused'); }
-    }
-
-    function handleTimeout() {
-        const step = getSequence()[turnIndex];
-        if (!step) return;
-
-        if (step.m === 'B') {
-            if (myRole === 'solo' || myRole === step.t || myRole === hostRole) {
-                if (roomId) { roomRef.child('selections').child(turnIndex).set('TIMEOUT'); roomRef.update({ timerPaused: false }); }
-                else executeSelectionLocally('TIMEOUT');
-            }
-        } else {
-            isWaitingForPick = true; updateTimerDisplay();
-            const teamName = document.getElementById(`name-${step.t}`).innerText;
-            const msg = document.getElementById('status-msg');
-            msg.innerText = `${teamName} - SELECT NOW!`; msg.style.color = "var(--ban-red)";
-            
-            if (myRole === 'solo' || myRole === step.t) {
-                setTimeout(() => { while(true) { if(confirm(`【時間切れ】\n${teamName}チームの番です。ポケモンを選択してください。`)) break; } }, 100);
-            }
-        }
-    }
-
-    function highlightTurn() {
-        if (isWaitingForPick) return;
-        document.querySelectorAll('.pick-slot, .ban-slot, .team-box').forEach(s => { s.classList.remove('active-turn', 'active-team', 'active-turn-slot'); });
-
-        const sequence = getSequence(), step = sequence[turnIndex], statusMsg = document.getElementById('status-msg');
-        if (step) {
-            document.getElementById(`panel-${step.t}`).classList.add('active-team');
-            if (step.m === 'B') document.getElementById(`${step.t}-ban-${step.i}`).classList.add('active-turn-slot');
-            else {
-                document.getElementById(`${step.t}-pick-${step.i}`).classList.add('active-turn-slot');
-                const nextStep = sequence[turnIndex + 1];
-                if (nextStep && nextStep.time === 0 && nextStep.m === 'P') document.getElementById(`${nextStep.t}-pick-${nextStep.i}`).classList.add('active-turn-slot');
-            }
-
-            if (!isDraftActive && roomId) {
-                statusMsg.innerText = "WAITING FOR READY..."; statusMsg.style.color = "#aaa";
-                clearInterval(timerInterval); document.getElementById('timer').innerText = "--"; document.getElementById('timer').className = "timer-display";
-                return;
-            }
-
-            const teamName = document.getElementById(`name-${step.t}`).innerText;
-            statusMsg.innerText = `${teamName} ${step.m === 'B' ? 'BANNING' : 'PICKING'}`;
-            statusMsg.style.color = step.t === 'p' ? 'var(--purple)' : 'var(--orange)';
-            
-            if (step.time > 0) startTimer(step.time);
-            else if (step.time === 0 && turnIndex > 0) document.getElementById('timer').innerText = "--";
-        } else {
-            clearInterval(timerInterval); document.getElementById('timer').innerText = "--"; document.getElementById('timer').className = "timer-display";
-            statusMsg.innerText = `DRAFT COMPLETE`; statusMsg.style.color = "#fff";
-
-            if (isTimerEnabled) {
-                if (roomId && (myRole === hostRole || (hostRole === 'spec' && myRole === 'p'))) {
-                    roomRef.update({ timerEnabled: false });
-                } else if (!roomId) {
-                    document.getElementById('timer-toggle').checked = false; applyTimerToggleLocal(false);
-                }
-            }
-        }
-    }
-
-    function toggleFirstPick() { 
-        if (turnIndex > 0) { if (!confirm("ドラフトがすでに進行中です。\n先攻・後攻を入れ替えて、この試合を「最初からやり直し」ますか？")) return; }
-        const nextFirst = (firstTeam === 'p' ? 'o' : 'p');
-        if (roomId) {
-            roomRef.update({ 
-                firstTeam: nextFirst, selections: [], timerEnabled: false, timerPaused: false, ready: { p: false, o: false },
-                resetEvent: { time: Date.now(), by: myRole, type: 'swap' } 
-            });
-        } else { firstTeam = nextFirst; updateBadges(); resetCurrentDraftLocally(); }
-    }
-
-    function updateBadges() {
-        const bp = document.getElementById('badge-p'), bo = document.getElementById('badge-o');
-        bp.innerText = firstTeam === 'p' ? '先攻' : '後攻'; bp.className = firstTeam === 'p' ? 'order-badge order-1st' : 'order-badge';
-        bo.innerText = firstTeam === 'o' ? '先攻' : '後攻'; bo.className = firstTeam === 'o' ? 'order-badge order-1st' : 'order-badge';
-    }
-
-    function resetCurrentDraftLocally() { 
-        turnIndex = 0; currentRoundUsed.clear(); isWaitingForPick = false; isPaused = false;
-        document.querySelectorAll('.pick-slot').forEach((s, i) => { s.innerHTML = `Pick ${i+1}`; s.classList.remove('filled'); delete s.dataset.pokemon; }); 
-        document.querySelectorAll('.ban-slot').forEach(s => s.innerHTML = ""); 
-        resetReadyUI(); initGrid(); 
-    }
-    
-    function resetCurrentGame() {
-        if(confirm("現在の進行状況を最初からやり直しますか？\n（他の試合のPick履歴には影響しません）")) {
-            if (roomId) {
-                roomRef.update({ 
-                    selections: [], timerEnabled: false, timerPaused: false, ready: { p: false, o: false },
-                    resetEvent: { time: Date.now(), by: myRole, type: 'current' } 
-                });
-            } else resetCurrentDraftLocally();
-        }
-    }
-
-    function changeGame(num) {
-        document.querySelectorAll('#picks-purple .pick-slot').forEach(s => { if(s.dataset.pokemon) usedP.add(s.dataset.pokemon); });
-        document.querySelectorAll('#picks-orange .pick-slot').forEach(s => { if(s.dataset.pokemon) usedO.add(s.dataset.pokemon); });
-        
-        if (roomId) {
-            roomRef.update({ 
-                currentGame: num, selections: [], usedP: Array.from(usedP), usedO: Array.from(usedO),
-                timerEnabled: false, timerPaused: false, ready: { p: false, o: false }
-            });
-        } else {
-            document.querySelectorAll('.game-tabs button').forEach(b => b.classList.remove('active'));
-            document.getElementById(`tab${num}`).classList.add('active'); resetCurrentDraftLocally();
-        }
-    }
-
-    function resetAll() { 
-        if(confirm("全試合の記録をリセットしますか？")) { 
-            if (roomId) {
-                roomRef.update({ 
-                    currentGame: 1, firstTeam: 'p', selections: [], usedP: [], usedO: [], 
-                    timerEnabled: false, timerPaused: false, ready: { p: false, o: false },
-                    resetEvent: { time: Date.now(), by: myRole, type: 'all' } 
-                });
-            } else { usedP.clear(); usedO.clear(); changeGame(1); }
-        } 
-    }
-    
-    updateBadges(); 
-</script>
-
-<footer class="footer-disclaimer">
-    <p>
-        当サイトはファンによる非営利目的のプロジェクトであり、株式会社ポケモン、Nintendo、Creatures Inc.、GAME FREAK inc.、およびTencent Gamesとは一切関係ありません。<br>
-        『Pokémon UNITE』に関するすべての画像および知的財産権は、各権利者に帰属します。
-    </p>
-    <p>&copy;2026 Developed by kirimi</p>
-</footer>
 </body>
 </html>
