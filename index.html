@@ -42,7 +42,6 @@
             animation: scene-in 0.8s var(--ios-ease) forwards;
         }
 
-        /* 🌟 サイバー感を取り入れた3DホバーUI */
         #role-selector {
             position: fixed; inset: 0; background: rgba(5, 5, 10, 0.95);
             backdrop-filter: blur(25px); z-index: 9999; display: flex; flex-direction: column;
@@ -57,7 +56,6 @@
             perspective: 1000px;
         }
         
-        /* 指定されたベースCSS */
         .cast-card {
             width: 180px; padding: 35px 15px; 
             background: rgba(255,255,255,0.02); 
@@ -71,7 +69,6 @@
         .cast-card h3 { margin-top: 15px; font-size: 0.9rem; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
         .role-icon { font-size: 3rem; transform: translateZ(15px); }
 
-        /* ホバー時にそれぞれのカラーが発動（指定CSSの組み込み） */
         .cast-card.green:hover {
             transform: perspective(1000px) rotateX(10deg) rotateY(-10deg) translateZ(20px);
             border-color: var(--color-g); background: rgba(25, 149, 0, 0.05);
@@ -436,7 +433,6 @@
         }, 1000);
     }
 
-    // 🌟 URL経由でアクセスしたゲスト向けのUI変更
     window.addEventListener('DOMContentLoaded', () => {
         if (roomId && hostRole) {
             document.getElementById('welcome-title').innerText = 'ONLINE MATCH: JOIN ROOM';
@@ -444,7 +440,6 @@
             const matchCard = document.getElementById('card-matching');
             const joinRole = hostRole === 'p' ? 'o' : 'p';
             
-            // マッチングモードのカードを、参加するチーム（通常はオレンジ）に切り替え
             matchCard.className = joinRole === 'o' ? 'cast-card orange' : 'cast-card purple';
             matchCard.onclick = () => setRole(joinRole);
             matchCard.innerHTML = `
@@ -470,7 +465,6 @@
             document.getElementById('invite-section').style.display = 'none';
             document.getElementById('welcome-title').innerText = 'FEARLESS DRAFT';
             
-            // カードを初期状態（部屋作成モード）に戻す
             const matchCard = document.getElementById('card-matching');
             matchCard.className = 'cast-card purple';
             matchCard.onclick = () => setRole('p'); 
@@ -484,18 +478,23 @@
         }
     }
 
+    // 🌟 バグ修正部分：roomIdが存在する時（オンライン通信が必要な時）だけFirebaseの監視を開始する
     function joinAs(role) {
         myRole = role;
         if (role !== 'spec' && role !== 'solo' && roomId) {
             const myStatusRef = db.ref(`rooms/${roomId}/players/${role}`);
             myStatusRef.set(true); myStatusRef.onDisconnect().set(false);
         }
-        setupFirebaseListener(); finishSetup(role);
+        
+        if (roomId) {
+            setupFirebaseListener();
+        }
+        
+        finishSetup(role);
     }
 
     function setRole(role) {
         if (roomId) {
-            // URL経由（参加モード）の処理
             roomRef = db.ref('rooms/' + roomId);
             if (role === 'p' || role === 'o') {
                 db.ref(`rooms/${roomId}/devices/${role}`).once('value').then(snap => {
@@ -512,13 +511,11 @@
                 joinAs(role);
             }
         } else {
-            // URLなし（新規作成モード）の処理
             if (role === 'solo') {
                 joinAs(role);
             } else if (role === 'spec') {
                 alert("観戦(SPECTATOR)モードは、発行された招待リンクからアクセスした場合のみ利用できます。");
             } else {
-                // MATCHING MODE (role === 'p') の処理
                 roomId = Math.random().toString(36).substring(2, 8);
                 hostRole = role;
                 roomRef = db.ref('rooms/' + roomId);
@@ -534,7 +531,6 @@
                     ready: { p: false, o: false },
                     devices: initialDevices
                 }).then(() => {
-                    // 🌟 修正：ここではまだ画面遷移(finishSetup)を呼ばない！
                     myRole = role;
                     const myStatusRef = db.ref(`rooms/${roomId}/players/${myRole}`);
                     myStatusRef.set(true);
@@ -545,7 +541,6 @@
                 const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}&host=${role}`;
                 document.getElementById('invite-url').value = inviteUrl;
                 
-                // カード選択画面を隠して招待URL画面を表示
                 document.querySelector('.role-card-container').style.display = 'none';
                 document.getElementById('invite-section').style.display = 'flex';
             }
@@ -561,10 +556,7 @@
         });
     }
 
-    // 🌟 修正：招待画面の「ドラフト画面で待機する」を押した時に画面を切り替える
-    function closeRoleSelector() { 
-        finishSetup(myRole); 
-    }
+    function closeRoleSelector() { finishSetup(myRole); }
 
     function finishSetup(role) {
         document.getElementById('role-selector').style.opacity = '0';
